@@ -1,0 +1,426 @@
+
+[opc@litellm-gateway ~]$
+podman exec omniroute node -e '
+const fs = require("fs");
+const path = require("path");
+const root = "/app/.build/next/server/app/api";
+
+function walk(dir) {
+  if (!fs.existsSync(dir)) {
+    console.log("API build directory not found: " + dir);
+    return;
+  }
+  for (const e of fs.readdirSync(dir, {withFileTypes:true})) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      walk(p);
+      continue;
+    }
+    if (!/route\.js$/.test(p) || !/key|auth|registered/i.test(p)) continue;
+
+    const s = fs.readFileSync(p, "utf8");
+    const methods = [...s.matchAll(/exports\.([A-Z]+)\s*=/g)]
+      .map(m => m[1]);
+    const clues = [...new Set(
+      s.match(/.{0,100}(?:generateApiKey|registered-keys|Invalid API key|createApiKey|api_keys|apiKeys|NextResponse\.json).{0,160}/gi) || []
+    )].slice(0,5);
+
+    console.log("\nFILE: " + p);
+    console.log("METHODS: " + (methods.join(", ") || "not detected"));
+    for (const c of clues) console.log("CLUE: " + c.replace(/\s+/g," "));
+  }
+}
+walk(root);
+'
+
+FILE: /app/.build/next/server/app/api/auth/csrf/route.js
+METHODS: not detected
+CLUE: "force-dynamic";async function i(a){let b=await (0,f.xg)(a);if(b)return b;let c=(0,g.X)(a);return e.NextResponse.json(c??{token:null,expiresAt:null},{headers:{"Cache-Control":"no-store"}})}d()}catch(a){d(a)}})},579646:a=>{"use strict";a.exports=require("child_process")},582799
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/auth/login/route.js
+METHODS: not detected
+CLUE: led",ipAddress:b.ipAddress||void 0,requestId:b.requestId,metadata:{reason:"missing_jwt_secret"}}),e.NextResponse.json({error:"Server misconfigured: JWT_SECRET not set. Contact administrator."},{status:500});try{c=await a.json()}catch{return e.NextResponse.json({error:{message:
+CLUE: body",message:"Invalid JSON body"}]}},{status:400})}let d=(0,l.Jb)(k.X5v,c);if((0,l.kf)(d))return e.NextResponse.json({error:d.error},{status:400});let h="string"==typeof d.data.password?d.data.password:"";if(!h)return e.NextResponse.json({error:"Invalid password payload"},{st
+CLUE: ss:s||void 0,requestId:b.requestId,metadata:{reason:"password_login_disabled_when_oidc_active"}}),e.NextResponse.json({error:"Password login is disabled when OIDC is active. Please sign in with OIDC."},{status:403});let v=!1!==r.bruteForceProtection,w=(0,m.bZ)(u,{enabled:v});i
+CLUE: ",ipAddress:s||void 0,requestId:b.requestId,metadata:{retryAfterSeconds:w.retryAfterSeconds||0}}),e.NextResponse.json({error:"Too many failed attempts. Try again later."},{status:429,headers:{"Retry-After":String(w.retryAfterSeconds||60)}});let x=await (0,i.kN)({settings:r,sou
+CLUE: ddress:b.ipAddress||void 0,requestId:b.requestId,metadata:{reason:"missing_persisted_password"}}),e.NextResponse.json({error:"No password configured. Complete onboarding first.",needsSetup:!0},{status:403});let z=await (0,i.YO)(h,y),A=(0,p.t7)(a,b.ipAddress);if(z&&(0,i.Uf)(h)&
+
+FILE: /app/.build/next/server/app/api/auth/logout/route.js
+METHODS: not detected
+CLUE: e)()}catch{return null}}();if(!b||!a||!function(a){if(g)return h;try{h=a.prepare("PRAGMA table_info(api_keys)").all().some(a=>"no_log"===a.name)}catch{h=!1}return g=!0,h}(b))return!1;let c=f.get(a);if(c&&Date.now()-c.timestamp<3e4)return c.value;try{let c=b.prepare("S
+CLUE: ELECT no_log FROM api_keys WHERE id = ?").get(a),d=!!(c&&1===Number(c.no_log));return f.set(a,{value:d,timestamp:Date.now()}),d}catch{return!1}}(a);return b&&e.add(a),b}},840610:a=>{"use
+CLUE: esourceType:"auth_session",status:"success",ipAddress:b.ipAddress||void 0,requestId:b.requestId}),e.NextResponse.json({success:!0})}d()}catch(a){d(a)}})}};var b=require("../../../../webpack-runtime.js");b.C(a);var c=b.X(0,[64741,65573,45592,8292,61745,98540,36869,73716,52844,9
+
+FILE: /app/.build/next/server/app/api/auth/oidc/callback/route.js
+METHODS: not detected
+
+FILE: /app/.build/next/server/app/api/auth/oidc/login/route.js
+METHODS: not detected
+CLUE: b.oidcRedirectPath.length>0?b.oidcRedirectPath:"/api/auth/oidc/callback";if(!c||!f||!h||!i)return d.NextResponse.json({error:"OIDC is not configured. Use password login or configure OIDC in settings."},{status:400});let l=(a.headers.get("x-forwarded-proto")||"").split(",")[0].
+
+FILE: /app/.build/next/server/app/api/auth/status/route.js
+METHODS: not detected
+CLUE: ;async function h(){try{let a=await (0,e.UL)(),b=a.get(f.th)?.value,c=(0,f.KZ)();if(!b||!c)return d.NextResponse.json({authenticated:!1});let g=await (0,f.d)(b,c);return d.NextResponse.json({authenticated:null!==g})}catch{return d.NextResponse.json({authenticated:!1})}}},25797
+
+FILE: /app/.build/next/server/app/api/cli-tools/keys/route.js
+METHODS: not detected
+CLUE: 82392),i=a([f,g]);async function j(a){let b=await (0,f.B)(a);if(b)return b;try{let a=(await (0,g.getApiKeys)()).map(a=>({...a,rawKey:a.key,key:(0,h.L)(a.key)}));return e.NextResponse.json({keys:a,total:a.length})}catch(a){return console.log("Error fetching CLI tool k
+CLUE: eys:",a),e.NextResponse.json({error:"Failed to fetch CLI tool keys"},{status:500})}}[f,g]=i.then?(await i)():i,d()}catch(a){d(a)}})},257975:a=>{"use strict";a.exports=require("node:util")}
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/cloud/auth/route.js
+METHODS: not detected
+CLUE: ;async function k(a){try{let b=a.headers.get("Authorization");if(!b?.startsWith("Bearer "))return e.NextResponse.json({error:"Missing API key"},{status:401});let c=b.slice(7);if(!await (0,f.ek)(c))return e.NextResponse.json({error:"Invalid API key"},{status:401});let d=await (
+CLUE: ity:a.globalPriority,defaultModel:a.defaultModel,isActive:a.isActive}}),n=await (0,f.OM)();return e.NextResponse.json({connections:m,modelAliases:n})}catch(a){return console.log("Cloud auth error:",a),e.NextResponse.json({error:"Internal error"},{status:500})}}[f,g,h]=j.then?(
+
+FILE: /app/.build/next/server/app/api/keys/[id]/devices/route.js
+METHODS: not detected
+CLUE: return c;try{let{id:a}=await b,c=await (0,g.getApiKeyById)(a);if(!c||"string"!=typeof c.id)return e.NextResponse.json((0,i.buildErrorBody)(404,"Key not found"),{status:404});return e.NextResponse.json({keyId:c.id,name:"string"==typeof c.name?c.name:"",count:(0,h.M9)(c.id),devi
+CLUE: ces:(0,h.rH)(c.id)})}catch(a){return j.error("keys","Error fetching API key devices",a),e.NextResponse.json((0,i.buildErrorBody)(500,(0,i.sanitizeErrorMessage)(a)),{status:500})}}[f,g]=k.then?(await k)():k,d()}catch(a){d(a)}})},173136:a=>{"use strict";a.exports=requi
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/keys/[id]/regenerate/route.js
+METHODS: not detected
+CLUE: function j(a,{params:b}){let c=await (0,g.xg)(a);if(c)return c;try{let{id:a}=await b;if(!a)return e.NextResponse.json({error:"Missing key ID"},{status:400});let c=await (0,f.regenerateApiKey)(a);if(!c)return e.NextResponse.json({error:"Key not found"},{status:404});return e.Ne
+CLUE: ated successfully",key:c.key,id:c.id})}catch(a){return h.error("keys","Error regenerating key",a),e.NextResponse.json({error:"Failed to regenerate key"},{status:500})}}[f,g]=i.then?(await i)():i,d()}catch(a){d(a)}})},192280:(a,b,c)=>{"use strict";Object.defineProperty(b,"I",{e
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/keys/[id]/reveal/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: h]);async function k(a,{params:b}){let c=await (0,h.xg)(a);if(c)return c;try{if(!(0,g.U)())return e.NextResponse.json({error:"API key reveal is disabled"},{status:403});let{id:a}=await b,c=await (0,f.getApiKeyById)(a);if(!c||"string"!=typeof c.key)return e.NextResponse.json({e
+CLUE: rror:"Key not found"},{status:404});return e.NextResponse.json({key:c.key})}catch(a){return i.error("keys","Error revealing key",a),e.NextResponse.json({error:"Failed to reveal key"},{status:500})}}[f,h]=j.then?(await j)()
+
+FILE: /app/.build/next/server/app/api/keys/[id]/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: await (0,l.xg)(a);if(c)return c;try{let{id:a}=await b,c=await (0,f.getApiKeyById)(a);if(!c)return e.NextResponse.json({error:"Key not found"},{status:404});let d="string"==typeof c.key?c.key:null;return e.NextResponse.json({...c,key:d?d.slice(0,8)+"****"+d.slice(-4):null})}cat
+CLUE: ch(a){return m.error("keys","Error fetching key",a),e.NextResponse.json({error:"Failed to fetch key"},{status:500})}}async function q(a,{params:b}){let c,d=await (0,l.xg)(a);if(d)return d;try{c=await a.json()}catch{return e.NextRes
+CLUE: alid JSON body"}]}},{status:400})}try{let{id:a}=await b,d=(0,k.Jb)(j.qtq,c);if((0,k.kf)(d))return e.NextResponse.json({error:d.error},{status:400});let{name:g,modelAccessMode:h,connectionAccessMode:i,allowedModels:l,blockedModels:m,allowedCombos:n,allowedConnections:o,noLog:p,
+CLUE: geLimitUsd=K),void 0!==L&&(M.chaosModeEnabled=L),!await (0,f.updateApiKeyPermissions)(a,M))return e.NextResponse.json({error:"Key not found"},{status:404});return await s(),e.NextResponse.json({message:"API key settings updated successfully",...void 0!==g&&{name:g},...void 0!=
+
+FILE: /app/.build/next/server/app/api/keys/[id]/usage-limits/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: return c;try{let{id:a}=await b,c=await (0,g.getApiKeyById)(a);if(!c||"string"!=typeof c.id)return e.NextResponse.json({error:"Key not found"},{status:404});let d=await (0,h.getApiKeyUsageLimitStatus)({id:c.id,allowedConnections:Array.isArray(c.allowedConnections)?c.allowedConn
+CLUE: ll,weeklyUsageLimitUsd:"number"==typeof c.weeklyUsageLimitUsd?c.weeklyUsageLimitUsd:null});return e.NextResponse.json({key:{id:c.id,name:"string"==typeof c.name?c.name:"",usageLimitEnabled:!0===c.usageLimitEnabled,dailyUsageLimitUsd:"number"==typeof c.dailyUsageLimitUsd?c.dail
+CLUE: LimitUsd:null},status:d})}catch(a){return i.error("keys","Error fetching API key usage limits",a),e.NextResponse.json({error:"Failed to fetch usage limits"},{status:500})}}[f,g]=j.then?(await j)():j,d()}catch(a){d(a)}})},927910:a=>{"use strict";a.exports=require("stream")},932
+
+FILE: /app/.build/next/server/app/api/keys/groups/[id]/keys/route.js
+METHODS: not detected
+CLUE: ssage:a.message}async function h(a,b){let c;try{c=await a.json()}catch{return{success:!1,response:d.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}}let g=e(b,c);return f(g)?{success:!1,response:d.NextRes
+CLUE: keyId is required")});async function j(a,{params:b}){try{let{id:a}=await b;if(!(0,g.VU)(a))return e.NextResponse.json({error:"Group not found"},{status:404});let c=(0,g.Nk)(a);return e.NextResponse.json({members:c})}catch(a){return e.NextResponse.json({error:"Failed to list me
+CLUE: bers"},{status:500})}}async function k(a,{params:b}){try{let{id:c}=await b;if(!(0,g.VU)(c))return e.NextResponse.json({error:"Group not found"},{status:404});let d=await a.json(),f=(0,h.Jb)(m,d);if((0,h.kf)(f))return e.NextResponse.json({error:f.error},{status:400});if(!(0,g.D
+CLUE: r)(f.data.keyId,c))return e.NextResponse.json({error:"Failed to add key"},{status:500});return e.NextResponse.json({success:!0},{status:201})}catch(a){return e.NextResponse.json({error:"Failed to add key to group"},{status:500})}}async function l(a,{params:b}){try{let{id:c}
+CLUE: =await b,d=new URL(a.url).searchParams.get("keyId");if(!d)return e.NextResponse.json({error:"keyId query param required"},{status:400});if(!(0,g.Pw)(d,c))return e.NextResponse.json({error:"Key not found in group"},{status:404});return e.NextRes
+
+FILE: /app/.build/next/server/app/api/keys/groups/[id]/permissions/route.js
+METHODS: not detected
+CLUE: ).min(1).optional()});async function j(a,{params:b}){try{let{id:a}=await b;if(!(0,g.VU)(a))return e.NextResponse.json({error:"Group not found"},{status:404});let c=(0,g.Oh)(a);return e.NextResponse.json({permissions:c})}catch(a){return e.NextResponse.json({error:"Failed to lis
+CLUE: ions"},{status:500})}}async function k(a,{params:b}){try{let{id:c}=await b;if(!(0,g.VU)(c))return e.NextResponse.json({error:"Group not found"},{status:404});let d=await a.json(),f=(0,h.Jb)(m,d);if((0,h.kf)(f))return e.NextResponse.json({error:f.error},{status:400});let i=(0,g
+CLUE: .Oy)(c,f.data.modelPattern,f.data.accessType,f.data.provider);return e.NextResponse.json({permission:i},{status:201})}catch(a){return e.NextResponse.json({error:"Failed to add permission"},{status:500})}}async function l(a,{params:b}){try{let{id:c}
+CLUE: =await b,d=new URL(a.url).searchParams.get("permissionId");if(!d)return e.NextResponse.json({error:"permissionId query param required"},{status:400});if(!(0,g.pJ)(d))return e.NextResponse.json({error:"Permission not found"},{status:404});return e.Next
+CLUE: Response.json({success:!0})}catch(a){return e.NextResponse.json({error:"Failed to remove permission"},{status:500})}}d()}catch(a){d(a)}})},257975:a=>{"use strict";a.exports=require("node:util")},274552:a=>{"use strict";a.ex
+
+FILE: /app/.build/next/server/app/api/keys/groups/[id]/route.js
+METHODS: not detected
+CLUE: ssage:a.message}async function h(a,b){let c;try{c=await a.json()}catch{return{success:!1,response:d.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}}let g=e(b,c);return f(g)?{success:!1,response:d.NextRes
+CLUE: eld is required");async function j(a,{params:b}){try{let{id:a}=await b,c=(0,g.zW)(a);if(!c)return e.NextResponse.json({error:"Group not found"},{status:404});let d=(0,g.Nk)(a);return e.NextResponse.json({group:c,members:d})}catch(a){return e.NextResponse.json({error:"Failed to
+CLUE: tion k(a,{params:b}){try{let{id:c}=await b,d=await a.json(),f=(0,h.Jb)(m,d);if((0,h.kf)(f))return e.NextResponse.json({error:f.error},{status:400});let i=(0,g.sQ)(c,f.data);if(!i)return e.NextResponse.json({error:"Group not found"},{status:404});return e.NextResponse.json({gro
+CLUE: up:i})}catch(a){return e.NextResponse.json({error:"Failed to update group"},{status:500})}}async function l(a,{params:b}){try{let{id:a}=await b;if(!(0,g.ii)(a))return e.NextResponse.json({error:"Group n
+CLUE: ot found"},{status:404});return e.NextResponse.json({success:!0})}catch(a){return e.NextResponse.json({error:"Failed to delete group"},{status:500})}}d()}catch(a){d(a)}})},579646:a=>{"use strict";a.exports=require("child_process")},583997:a=>{"use strict";a.exp
+
+FILE: /app/.build/next/server/app/api/keys/groups/route.js
+METHODS: not detected
+CLUE: ssage:a.message}async function h(a,b){let c;try{c=await a.json()}catch{return{success:!1,response:d.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}}let g=e(b,c);return f(g)?{success:!1,response:d.NextRes
+CLUE: ,description:f.z.string().optional().default("")});async function j(){try{let a=(0,g.d8)();return e.NextResponse.json({groups:a})}catch(a){return e.NextResponse.json({error:"Failed to list groups"},{status:500})}}async function k(a){try{let b=await a.json(),c=(0,h.Jb)(l,b);if(
+CLUE: (0,h.kf)(c))return e.NextResponse.json({error:c.error},{status:400});let d=(0,g.PY)(c.data.name,c.data.description);return e.NextResponse.json({group:d},{status:201})}catch(a){return e.NextResponse.
+
+FILE: /app/.build/next/server/app/api/keys/route.js
+METHODS: not detected
+CLUE: 0,i=Number.isInteger(g)&&g&&g>0?g:null,j=Number.isInteger(h)&&h>0?h:0,{limit:i,offset:j}),n=(0,f.getApiKeysCount)(),o=(await (0,f.getApiKeys)(k??void 0,m)).map(a=>({...a,key:(0,l.L)(a.key)}));return e.NextResponse.json({keys:o,total:n,allowKeyReveal:(0,l.U)()})}catch
+CLUE: (a){return o.error("keys","Error fetching keys",a),e.NextResponse.json({error:"Failed to fetch keys"},{status:500})}}async function r(a){let b=await (0,m.xg)(a);if(b)return b;try{let b=await a.json(),c=(0,k.Jb)(j.BRt,b);if((0,k.kf
+CLUE: )(c))return e.NextResponse.json({error:c.error},{status:400});let{name:d,modelAccessMode:g,allowedModels:i,allowedCombos:l,noLog:m,scopes:o,allowedConnections:p,allowUsageCommand:q,usageLimit
+CLUE: sageLimitUsd:u,chaosModeEnabled:v,expiresAt:w}=c.data,x=await (0,h.Xj)(),y=(0,n.v8)(o),z=await (0,f.createApiKey)(d,x,y,{modelAccessMode:g,allowedModels:i,allowedCombos:l,allowedConnections:p,expiresAt:w});return(!0===m||!0===q||!0===r||void 0!==t||void 0!==u||!0===v)&&aw
+CLUE: ilyUsageLimitUsd:t},...void 0!==u&&{weeklyUsageLimitUsd:u},...!0===v&&{chaosModeEnabled:!0}}),s(),e.NextResponse.json({key:z.key,name:z.name,id:z.id,machineId:z.machineId,modelAccessMode:z.modelAccessMode,allowedModels:z.allowedModels,allowedCombos:z.allowedCombos,allowedConne
+
+FILE: /app/.build/next/server/app/api/oauth/[provider]/[action]/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: poll-callback","exchange","poll","device-complete"]);function g(a,b){if(e.has(a)&&f.has(b))return d.NextResponse.json({error:`${a} has no browser OAuth flow — it imports LLM credentials from the OS keychain. Use the "Import" button on the ${a} provider card in the dashboard to
+CLUE: return c.length===d.length&&(0,f.timingSafeEqual)(c,d)}async function A(a){return(0,t.xg)(a,{invalidApiKeyStatus:401})}async function B(a,{params:b}){try{let a=await b;if(I.has(a.provider)&&("authorize"===a.action||"start-callback-server"===a.action||"poll-callback"=
+CLUE: ==a.action))return e.NextResponse.json({error:`Browser OAuth disabled for ${a.provider} — use import-token via /api/oauth/${a.provider}/import-token. Paste an existing Devin API key from an authenti
+CLUE: http://localhost:8080/callback",b=(0,g.K3)(c,a),d=(0,g.kP)(c,b);if("qoder"===c&&!d.authUrl)return e.NextResponse.json({...d,supported:!1,error:"Qoder browser OAuth is experimental and disabled by default. Configure QODER_OAUTH_* environment variables or use a Personal Access T
+
+FILE: /app/.build/next/server/app/api/oauth/[provider]/paste-credentials/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: =c(584953),l=c(407771),m=a([f,g,i,k]);async function n(a,{params:b}){let c=await (0,k.xg)(a,{invalidApiKeyStatus:401});if(c)return c;try{let c,d,k,{provider:m}=await b;try{c=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let
+CLUE:  n=(0,j.Jb)(i.SIC,c);if((0,j.kf)(n))return e.NextResponse.json({error:n.error},{status:400});let{blob:o,connectionId:p}=n.data;try{d=(0,h.f)(m,o)}catch(a){return e.NextResponse.json({success:!1,error:(0,l.sanitizeErrorMess
+CLUE: ?.message)||"Invalid credentials"},{status:400})}try{k=await (0,f.TZ)(m,d.tokens)}catch(a){return e.NextResponse.json({success:!1,error:(0,l.sanitizeErrorMessage)(a?.message)||"Failed to finalize tokens"},{status:500})}let q=await (0,g.ix)(m,k,p);return e.NextResponse.json({su
+CLUE: il,displayName:q.displayName}})}catch(a){return console.error("OAuth paste-credentials error:",a),e.NextResponse.json({error:"Internal server error"},{status:500})}}[f,g,i,k]=m.then?(await m)():m,d()}catch(a){d(a)}})},710846:a=>{a.exports=require("next/dist/compiled/next-serve
+
+FILE: /app/.build/next/server/app/api/oauth/cliproxy-import/route.js
+METHODS: not detected
+CLUE: I_CONFIG_DIR||h().join(f().homedir(),".cli-proxy-api")}async function p(a){return(0,k.xg)(a,{invalidApiKeyStatus:401})}async function q(a){let b=await p(a);if(b)return b;try{let{candidates:a,skipped:b,scanned:c}=await (0,m.TQ)(o(),Date.now()),d=a.map(a=>({provider:a.
+CLUE: provider,type:a.type,email:a.email}));return i.NextResponse.json({dir:o(),scanned:c,skipped:b,accounts:d})}catch(a){return i.NextResponse.json({error:(0,l.sanitizeErrorMessage)(a instanceof Error?a.message:String(a))},{statu
+CLUE: l:b.email,ok:!1,error:(0,l.sanitizeErrorMessage)(a instanceof Error?a.message:String(a))})}return i.NextResponse.json({scanned:c,skipped:b,imported:d,results:e})}catch(a){return i.NextResponse.json({error:(0,l.sanitizeErrorMessage)(a instanceof Error?a.message:String(a))},{sta
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/oauth/codex/import/route.js
+METHODS: not detected
+CLUE: counts must be an object or an array of objects"})})});async function n(a){return(0,i.xg)(a,{invalidApiKeyStatus:401})}async function o(a){let b,c=await n(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid or empty JSON body"},{sta
+CLUE: tus:400})}let d=p.safeParse(b);if(!d.success)return e.NextResponse.json({error:d.error.errors[0]?.message??"Invalid request body"},{status:400});let f=(0,g.HD)(d.data.accounts);if(!f.ok)return e.NextResponse.json({error:f.error},{s
+CLUE: tatus:400});if(0===f.records.length)return e.NextResponse.json({error:"No accounts found in payload"},{status:400});let i=[],k=0,l=0;for(let a=0;a<f.records.length;a++){let b=(0,g.HY)(f.records[a]);if(!b.ok){l+=1,i.push({i
+CLUE: {index:a,ok:!1,error:(0,j.sanitizeErrorMessage)(b instanceof Error?b.message:String(b))})}}return e.NextResponse.json({success:0===l,imported:k,failed:l,total:f.records.length,results:i})}d()}catch(a){d(a)}})},529294:a=>{"use strict";a.exports=require("next/dist/server/app-ren
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/oauth/codex/import-token/route.js
+METHODS: not detected
+CLUE: .min(1).optional()})]);async function m(a){let b;try{b=await a.json()}catch{return{ok:!1,response:e.NextResponse.json((0,k.buildErrorBody)(400,"Invalid or empty JSON body"),{status:400})}}let c=p.safeParse(b);if(!c.success)return{ok:!1,response:e.NextResponse.json((0,k.buildEr
+CLUE: e:a.name}}:{ok:!1,error:b.error}}(c.data);return d.ok?{ok:!0,resolved:d.resolved}:{ok:!1,response:e.NextResponse.json((0,k.buildErrorBody)(400,d.error),{status:400})}}async function n(a){return(0,j.xg)(a,{invalidApiKeyStatus:401})}async function o(a){let b=await n(a);if(b)retu
+CLUE: se;let{accessToken:d,name:f}=c.resolved,h=(0,g.YR)(d);if(!h.email&&!h.chatgptAccountId&&!f)return e.NextResponse.json((0,k.buildErrorBody)(400,"Could not decode any account info from the access token and no name was provided"),{status:400});let j={};h.chatgptAccountId&&(j.chat
+CLUE: l,testStatus:"active",isActive:!0,...Object.keys(j).length>0?{providerSpecificData:j}:{}});return e.NextResponse.json({success:!0,connection:{id:a.id,provider:a.provider,email:a.email,name:a.name}})}catch(a){return e.NextResponse.json((0,k.buildErrorBody)(500,(0,k.sanitizeErro
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/oauth/cursor/auto-import/route.js
+METHODS: not detected
+CLUE: var e=c(945592),f=c(584953),g=c(796940),h=a([f]);async function i(a){let b=await (0,f.xg)(a,{invalidApiKeyStatus:401});if(b)return b;try{let a=await (0,g._E)();if(a.found)return e.NextResponse.json({found:!0,accessToken:a.accessToken,refreshToken:a.refreshToken,machi
+CLUE: neId:a.machineId,source:a.source});let b=await (0,g.p)();if(b.found)return e.NextResponse.json({found:!0,accessToken:b.accessToken,source:b.source});return e.NextResponse.json({found:!1,error:"No Cursor credentials found. Install Cursor IDE or login with
+CLUE:  cursor-agent."})}catch(a){return console.error("Cursor auto-import error:",a),e.NextResponse.json({found:!1,error:"Internal server error"},{status:500})}}f=(h.then?(await h)():h)[0],d()}catch(a){d(a)}})},579646:a=>{"use strict";a.exports=require("child_proc
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/oauth/cursor/import/route.js
+METHODS: not detected
+CLUE: m=c(584953),n=c(985502),o=c(566582),p=a([h,i,j,k,m,o]);async function q(a){return(0,m.xg)(a,{invalidApiKeyStatus:401})}async function r(a){let b,d=await q(a);if(d)return d;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details
+CLUE: message:"Invalid JSON body"}]}},{status:400})}try{let a,d=(0,l.Jb)(k.Z0J,b);if((0,l.kf)(d))return e.NextResponse.json({error:d.error},{status:400});let{accessToken:j,machineId:m,refreshToken:n}=d.data,p=new f.q,q=await (0,i.Zk)("cursor"),r=await (0,o.runWithProxyContext)(q,()=
+CLUE: der:"Imported",userId:s?.userId,accountId:s?.userId||null},testStatus:"active"})}return await t(),e.NextResponse.json({success:!0,connection:{id:a.id,provider:a.provider,email:a.email}})}catch(a){return console.error("Cursor import token error:",a),e.NextResponse.json({error:"
+CLUE: function s(a){let b=await q(a);if(b)return b;let c=new f.q().getTokenStorageInstructions();return e.NextResponse.json({provider:"cursor",method:"import_token",instructions:c,requiredFields:[{name:"accessToken",label:"Access Token",description:"From cursorAuth/accessToken in st
+CLUE: ,(0,i.getProviderConnections)(),(0,j.getCachedProviderNodes)(),(0,h.OM)(),(0,g.getCombos)(),(0,f.getApiKeys)(),(0,l.mO)()]);return{settings:function(a){let{password:b,requireLogin:c,cloudEnabled:d,...e}=n(a);return e}(a),providerConnections:o(b.map(a=>{let b;return b
+
+FILE: /app/.build/next/server/app/api/oauth/cursor/login/cancel/route.js
+METHODS: not detected
+CLUE: d:f.z.string().trim().min(1,"sessionId is required")});async function k(a){return(0,g.xg)(a,{invalidApiKeyStatus:401})}async function l(a){let b,c=await k(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details
+CLUE: ld:"body",message:"Invalid JSON body"}]}},{status:400})}let d=(0,h.Jb)(m,b);if((0,h.kf)(d))return e.NextResponse.json({error:d.error},{status:400});let f=(0,i.SF)(d.data.sessionId);return e.NextResponse.json({success:!0,cancelled:f})}d()}catch(a){d(a)}})},478474:a=>{"use stric
+CLUE: ssage:a.message}async function h(a,b){let c;try{c=await a.json()}catch{return{success:!1,response:d.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}}let g=e(b,c);return f(g)?{success:!1,response:d.NextRes
+
+FILE: /app/.build/next/server/app/api/oauth/cursor/login/poll/route.js
+METHODS: not detected
+CLUE: d:f.z.string().trim().min(1,"sessionId is required")});async function p(a){return(0,g.xg)(a,{invalidApiKeyStatus:401})}async function q(){try{await (0,k.Nx)()&&await (0,l.AF)()}catch{}}async function r(a){let b,c=await p(a);if(c)return c;try{b=await a.json()}catch{re
+CLUE: turn e.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}let d=(0,h.Jb)(s,b);if((0,h.kf)(d))return e.NextResponse
+CLUE: .json({error:d.error},{status:400});let{sessionId:f}=d.data,g=(0,i.fg)(f);if(!g)return e.NextResponse.json({status:"expired",error:"Login session expired or not found. Start again."},{status:410});try{let a=await (0,i.hk)(g.uuid,g.verifier);if("pending"===a.status)r
+CLUE: eturn e.NextResponse.json({status:"pending"});if("error"===a.status)return e.NextResponse.json({status:"error",error:a.message},{status:a.httpStatus&&a.httpStatus>=400?a.httpStatus:502});(0,i.y_)(f);let b=(0,i.Hh)(a.accessToken,a.refreshToken),c=await (0
+CLUE: ,n.Xj)(),d=await (0,j.N)({...b,machineId:c,authMethod:"deep_control"});return await q(),e.NextResponse.json({status:"ok",success:!0,connection:{id:d?.id,provider:"cursor",email:d?.email??b.email??null}})}catch(b){let a=(0,m.sanitizeErrorMessage)(b)||"Failed to poll C
+
+FILE: /app/.build/next/server/app/api/oauth/cursor/login/start/route.js
+METHODS: not detected
+CLUE: c(945592),f=c(584953),g=c(425546),h=c(407771),i=a([f]);async function j(a){return(0,f.xg)(a,{invalidApiKeyStatus:401})}async function k(a){let b=await j(a);if(b)return b;try{let a=await (0,g.Cq)(),{sessionId:b,loginUrl:c}=(0,g.mY)(a);return e.NextResponse.json({succe
+CLUE: Seconds:900})}catch(b){let a=(0,h.sanitizeErrorMessage)(b)||"Failed to start Cursor login";return e.NextResponse.json({error:a},{status:500})}}f=(i.then?(await i)():i)[0],d()}catch(a){d(a)}})},775919:a=>{"use strict";a.exports=require("node:worker_threads")},777030:a=>{"use st
+
+FILE: /app/.build/next/server/app/api/oauth/kiro/api-key/route.js
+METHODS: not detected
+CLUE: (0,n.sanitizeErrorMessage)(b)||"Internal server error"}async function s(a){return(0,l.xg)(a,{invalidApiKeyStatus:401})}async function t(a,b,c){let d=await (0,g.P)({provider:a}),e=(0,o.A)(d,{authType:"oauth",...c});return"string"==typeof e?.id?(0,g.rj)(e.id,b):(0,g.cr
+CLUE: th",...b})}async function u(a){let b,c=await s(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}try{let c,{searchParams:d}=new URL(a.url),h="amazon-q"==
+CLUE: =d.get("targetProvider")?"amazon-q":"kiro",i=(0,k.Jb)(j.ALI,b);if((0,k.kf)(i))return e.NextResponse.json({error:i.error},{status:400});let{refreshToken:l,region:n,clientId:o,clientSecret:q,authMethod:r,profileArn:s}=i.data,{tokenEndpoint:u,scopes:w}=i.data,x=new f
+CLUE: estStatus:"active",isActive:!0},g=await t(h,f,{profileArn:s,clientId:o,email:d});return await v(),e.NextResponse.json({success:!0,connection:{id:g.id,provider:g.provider,email:g.email}})}let z=!!(o&&q);if(z){let a={clientId:o,clientSecret:q,region:n||"us-east-1",authMethod:"id
+CLUE: ive:!0},F={profileArn:C,email:A};z&&(F.clientId=D.clientId);let G=await t(h,E,F);return await v(),e.NextResponse.json({success:!0,connection:{id:G.id,provider:G.provider,email:G.email}})}catch(a){return console.error("Kiro-compatible import token error:",a),e.NextResponse.json
+
+FILE: /app/.build/next/server/app/api/oauth/kiro/auto-import/route.js
+METHODS: not detected
+CLUE: c(499595),o=c(566582),p=c(177484),q=a([h,j,k,o]);async function r(a){let b=await (0,h.xg)(a,{invalidApiKeyStatus:401});if(b)return b;let{searchParams:c}=new URL(a.url),d="amazon-q"===c.get("targetProvider")?"amazon-q":"kiro",f=await s();if(f.found)return await y(f,d,
+CLUE: a);let g=await u(d);return g.found?await y(g,d,a):e.NextResponse.json({found:!1,error:"Kiro credentials not found. Run `kiro-cli login --use-device-flow` then retry, or use the Import Token option in the dashboard.",triedPaths:[.
+CLUE: pe:"oauth",...w}),await (0,j.Nx)()){let a=await (0,l.Xj)();await (0,k.AF)(a).catch(()=>{})}return e.NextResponse.json({found:!0,source:a.source,email:m||null,profileArn:q||null,region:f,message:"Kiro credentials imported successfully."})}let f=a.accessToken,g=a.refreshToken,h=
+CLUE: Status:"active"}),await (0,j.Nx)()){let a=await (0,l.Xj)();await (0,k.AF)(a).catch(()=>{})}return e.NextResponse.json({found:!0,source:a.source,email:s||null,profileArn:i||null,region:a.region||null,message:"Kiro credentials imported successfully."})}catch(a){return console.er
+CLUE: ror("[kiro auto-import] save error:",a),e.NextResponse.json({found:!1,error:"Internal server error"},{status:500})}}[h,j,k,o]=q.then?(await q)():q,d()}catch(a){d(a)}})},277725:a=>{"use strict";a.exports=require("stream/
+
+FILE: /app/.build/next/server/app/api/oauth/kiro/import/route.js
+METHODS: not detected
+CLUE: (0,n.sanitizeErrorMessage)(b)||"Internal server error"}async function s(a){return(0,l.xg)(a,{invalidApiKeyStatus:401})}async function t(a,b,c){let d=await (0,g.P)({provider:a}),e=(0,o.A)(d,{authType:"oauth",...c});return"string"==typeof e?.id?(0,g.rj)(e.id,b):(0,g.cr
+CLUE: th",...b})}async function u(a){let b,c=await s(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}try{let c,{searchParams:d}=new URL(a.url),h="amazon-q"==
+CLUE: =d.get("targetProvider")?"amazon-q":"kiro",i=(0,k.Jb)(j.ALI,b);if((0,k.kf)(i))return e.NextResponse.json({error:i.error},{status:400});let{refreshToken:l,region:n,clientId:o,clientSecret:q,authMethod:r,profileArn:s}=i.data,{tokenEndpoint:u,scopes:w}=i.data,x=new f
+CLUE: estStatus:"active",isActive:!0},g=await t(h,f,{profileArn:s,clientId:o,email:d});return await v(),e.NextResponse.json({success:!0,connection:{id:g.id,provider:g.provider,email:g.email}})}let z=!!(o&&q);if(z){let a={clientId:o,clientSecret:q,region:n||"us-east-1",authMethod:"id
+CLUE: ive:!0},F={profileArn:C,email:A};z&&(F.clientId=D.clientId);let G=await t(h,E,F);return await v(),e.NextResponse.json({success:!0,connection:{id:G.id,provider:G.provider,email:G.email}})}catch(a){return console.error("Kiro-compatible import token error:",a),e.NextResponse.json
+
+FILE: /app/.build/next/server/app/api/oauth/kiro/social-authorize/route.js
+METHODS: not detected
+CLUE: var e=c(945592),f=c(584953),g=c(781137),h=a([f]);async function i(a){let b=await (0,f.xg)(a,{invalidApiKeyStatus:401});if(b)return b;try{let{searchParams:b}=new URL(a.url),c=b.get("provider");if(!c||!["google","github"].includes(c))return e.NextResponse.json({error:"
+CLUE: stringify({clientId:g.Tx.socialClientId,loginProvider:d})});if(!f.ok){let a=await f.text();return e.NextResponse.json({error:`Device authorization failed: ${a}`},{status:502})}let h=await f.json();return e.NextResponse.json({authUrl:h.verificationUriComplete,deviceCode:h.devic
+CLUE: liseconds||5e3)/1e3),provider:c})}catch(a){return console.error("Kiro social authorize error:",a),e.NextResponse.json({error:"Internal server error"},{status:500})}}f=(h.then?(await h)():h)[0],d()}catch(a){d(a)}})},274552:a=>{"use strict";a.exports=require("pino")},277725:a=>{
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/oauth/kiro/social-exchange/route.js
+METHODS: not detected
+CLUE: der:f.z.enum(["kiro","amazon-q"]).optional()});async function q(a){let b,c=await (0,k.xg)(a,{invalidApiKeyStatus:401});if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON b
+CLUE: ody"}]}},{status:400})}let d=(0,l.Jb)(s,b);if((0,l.kf)(d))return e.NextResponse.json({error:d.error||"Missing deviceCode or provider"},{status:400});try{let{deviceCode:a,provider:b,targetProvider:c}=d.data,f=await fetch(m.Tx.socialDevicePollUrl
+CLUE: :m.Tx.socialClientId})}),i=await f.json(),j=(0,o.S)(f.ok,f.status,i);if("pending"===j.kind)return e.NextResponse.json({success:!1,pending:!0,error:j.error});if("error"===j.kind)return e.NextResponse.json({success:!1,pending:!1,error:j.error},{status:j.status});let k=new g.v().
+CLUE: t.id,q):await (0,h.createProviderConnection)({provider:p,authType:"oauth",...q});return await r(),e.NextResponse.json({success:!0,connection:{id:u.id,provider:u.provider,email:u.email}})}catch(a){return console.error("Kiro social exchange error:",a),e.NextResponse.json({error:
+CLUE: ssage:a.message}async function h(a,b){let c;try{c=await a.json()}catch{return{success:!1,response:d.NextResponse.json({error:{message:"Invalid request",details:[{field:"body",message:"Invalid JSON body"}]}},{status:400})}}let g=e(b,c);return f(g)?{success:!1,response:d.NextRes
+
+FILE: /app/.build/next/server/app/api/oauth/trae/authorize-state/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: var e=c(945592),f=c(584953),g=c(913916),h=a([f]);async function i(a){let b=await (0,f.xg)(a,{invalidApiKeyStatus:401});return b||e.NextResponse.json({state:(0,g.j)()})}f=(h.then?(await h)():h)[0],d()}catch(a){d(a)}})},912412:a=>{"use strict";a.exports=require("assert
+
+FILE: /app/.build/next/server/app/api/oauth/trae/import/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: 0083),g=c(401642),h=c(535095),i=c(584953),j=a([f,g,i]);async function k(a){return(0,i.xg)(a,{invalidApiKeyStatus:401})}async function l(a){let b,c=await k(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse.json({error:{message:"Invalid request",details
+CLUE: y",message:"Invalid JSON body"}]}},{status:400})}try{let a=(0,h.Jb)(g.XW,b);if((0,h.kf)(a))return e.NextResponse.json({error:a.error},{status:400});let{accessToken:c,webId:d,bizUserId:i,userUniqueId:j,scope:k,tenant:l,region:m,userRegion:n,userTimezone:o}=a.data,p=await (0,f.c
+CLUE: ,...o?{userTimezone:o}:{},userIdentity:"Free",authMethod:"imported"},testStatus:"active"});return e.NextResponse.json({success:!0,connection:{id:p.id,provider:p.provider}})}catch(a){return console.error("Trae import token error:",a),e.NextResponse.json({error:"Internal server
+CLUE: error"},{status:500})}}async function m(a){let b=await k(a);return b||e.NextResponse.json({provider:"trae",method:"import_token",instructions:"Sign in to solo.trae.ai, then copy the JWT sent in the 'Authorization: Cloud-IDE-JWT <token>' header (DevT
+
+FILE: /app/.build/next/server/app/api/providers/[id]/claude-auth/apply-local/route.js
+METHODS: not detected
+CLUE:  i={resource_type:"TEXT",status:"TEXT",request_id:"TEXT",metadata:"TEXT"},j=new Set(["apikey","extraapikeys","accesstoken","refreshtoken","idtoken","authtoken","jwttoken","token","secret","password","authorization","cookie","setcookie","consoleapikey","clientsecret"]
+CLUE: rams:b}){let c=await (0,f.xg)(a);if(c)return c;let d=(0,i.Uy)(a);try{let a=(0,g.CU)();if(a)return e.NextResponse.json({error:a,code:"writes_disabled"},{status:403});let{id:c}=await b,f=await (0,h.y4)(c);return(0,i.logAuditEvent)({action:"provider.credentials.applied",actor:"ad
+CLUE: vedBakPath,centralizedBackupPath:f.centralizedBackupPath,mcpOAuthPreserved:f.mcpOAuthPreserved}}),e.NextResponse.json({success:!0,connectionId:c,connectionLabel:f.connectionLabel,authPath:f.authPath,savedBakPath:f.savedBakPath,centralizedBackupPath:f.centralizedBackupPath,mcpO
+CLUE: ISOString()})}catch(b){console.error("[Claude Auth Apply] Failed:",b);if(b instanceof h.pX)return e.NextResponse.json({error:b.message,code:b.code},{status:b.status});let a=(0,j.sanitizeErrorMessage)(b)||"Failed to apply Claude auth file";return e.NextResponse.json({error:a},{
+
+FILE: /app/.build/next/server/app/api/providers/[id]/claude-auth/export/route.js
+METHODS: not detected
+CLUE: "nosniff"}})}catch(b){console.error("[Claude Auth Export] Failed:",b);if(b instanceof f.pX)return e.NextResponse.json({error:b.message,code:b.code},{status:b.status});let a=(0,h.sanitizeErrorMessage)(b)||"Failed to export Claude auth file";return e.NextResponse.json({error:a},
+
+FILE: /app/.build/next/server/app/api/providers/[id]/codex-auth/apply-local/route.js
+METHODS: not detected
+CLUE: rams:b}){let c=await (0,g.xg)(a);if(c)return c;let d=(0,j.Uy)(a);try{let c=(0,h.CU)();if(c)return e.NextResponse.json({error:c,code:"writes_disabled"},{status:403});let{id:f}=await b,g=!1;try{let b=n.safeParse(await a.json());g=!!b.success&&!0===b.data.force}catch{}let k=await
+CLUE: etadata:{provider:"codex",decision:k.decision,authPath:k.authPath,savedBakPath:l?.savedBakPath}}),e.NextResponse.json({success:!0,connectionId:f,decision:k.decision,connectionLabel:l?.connectionLabel,authPath:k.authPath,savedBakPath:l?.savedBakPath,centralizedBackupPath:l?.cen
+CLUE: oISOString()})}catch(b){console.error("[Codex Auth Apply] Failed:",b);if(b instanceof i.KJ)return e.NextResponse.json({error:b.message,code:b.code},{status:b.status});let a=(0,k.sanitizeErrorMessage)(b)||"Failed to apply Codex auth file";return e.NextResponse.json({error:a},{s
+CLUE:  i={resource_type:"TEXT",status:"TEXT",request_id:"TEXT",metadata:"TEXT"},j=new Set(["apikey","extraapikeys","accesstoken","refreshtoken","idtoken","authtoken","jwttoken","token","secret","password","authorization","cookie","setcookie","consoleapikey","clientsecret"]
+
+FILE: /app/.build/next/server/app/api/providers/[id]/codex-auth/export/route.js
+METHODS: not detected
+CLUE: :"nosniff"}})}catch(b){console.error("[Codex Auth Export] Failed:",b);if(b instanceof f.KJ)return e.NextResponse.json({error:b.message,code:b.code},{status:b.status});let a=(0,h.sanitizeErrorMessage)(b)||"Failed to export Codex auth file";return e.NextResponse.json({error:a},{
+
+FILE: /app/.build/next/server/app/api/providers/agy-auth/apply-local/route.js
+METHODS: not detected
+CLUE: return d;let f=(0,n.Uy)(a),h={};try{let b=await a.text();b.trim()&&(h=JSON.parse(b))}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let j=(0,r.Jb)(q.Eju,h);if((0,r.kf)(j))return e.NextResponse.json({error:j.error},{status:400});let{name:t,email:u,ov
+CLUE: {let a=await g().readFile(w,"utf8");b=JSON.parse(a)}catch(b){let a=b?.code;if("ENOENT"===a)return e.NextResponse.json({error:"No local Antigravity CLI login found. Run `agy`, sign in with Google, then try again.",code:"no_local_login"},{status:404});return e.NextResponse.json(
+CLUE: ata:{provider:"agy",created:h,source:"apply-local",email:d.email||u,hasProjectId:!!d.projectId}}),e.NextResponse.json({connection:(a={...g},delete a.accessToken,delete a.refreshToken,delete a.idToken,delete a.apiKey,a.providerSpecificData&&(a.providerSpecificData=(0,s.vv)(a.pr
+CLUE: oviderSpecificData)),a),created:h})}catch(a){if(a instanceof m.S5)return e.NextResponse.json({error:a.message,code:a.code},{status:a.status});return e.NextResponse.json({error:(0,p.sanitizeErrorMessage)(a)||"Failed to import local Antigravity CLI login
+
+FILE: /app/.build/next/server/app/api/providers/agy-auth/import/route.js
+METHODS: not detected
+CLUE: (a){let b,c,d=await (0,f.xg)(a);if(d)return d;let n=(0,h.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let o=(0,l.Jb)(k.Gpe,b);if((0,l.kf)(o))return e.NextResponse.json({error:o.error},{status:400});let{source:p,name:q,e
+CLUE: mail:r,overwriteExisting:s}=o.data;try{c="json"===p.kind?p.json:JSON.parse(p.text)}catch{return e.NextResponse.json({error:"Could not parse the content as JSON",code:"invalid_json"},{status:400})}try{let a,b=(0,g.dv)(c),d=await (0,g.Gr)(b),{connection:f,created:j}=await (0,g
+CLUE: tId:n.requestId,metadata:{provider:"agy",created:j,email:d.email||r,hasProjectId:!!d.projectId}}),e.NextResponse.json({connection:(a={...f},delete a.accessToken,delete a.refreshToken,delete a.idToken,delete a.apiKey,a.providerSpecificData&&(a.providerSpecificData=(0,m.vv)(a.pr
+CLUE: oviderSpecificData)),a),created:j})}catch(a){if(a instanceof g.S5)return e.NextResponse.json({error:a.message,code:a.code},{status:a.status});return e.NextResponse.json({error:(0,j.sanitizeErrorMessage)(a)||"Failed to import Antigravity CLI auth"},{sta
+
+FILE: /app/.build/next/server/app/api/providers/agy-auth/import-bulk/route.js
+METHODS: not detected
+CLUE:  o(a){let b,c=await (0,f.xg)(a);if(c)return c;let d=(0,h.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let n=(0,l.Jb)(k.KD1,b);if((0,l.kf)(n))return e.NextResponse.json({error:n.error},{status:400});let{entries:o,overwri
+CLUE: requestId:d.requestId,metadata:{provider:"agy",total:o.length,success:q.length,failed:r.length}}),e.NextResponse.json({success:q.length,failed:r.length,total:o.length,created:q,errors:r})}[f,g,k]=n.then?(await n)():n,d()}catch(a){d(a)}})},840610:a=>{a.exports=require("node:dns
+
+FILE: /app/.build/next/server/app/api/providers/agy-auth/zip-extract/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: c=await (0,f.xg)(a);if(c)return c;if(Number(a.headers.get("content-length")||"0")>0xb00000)return e.NextResponse.json({error:"ZIP file exceeds the 10 MB size limit",code:"file_too_large"},{status:413});try{let c=await a.arrayBuffer();if(c.byteLength>0xb00000)return e.NextRespo
+CLUE:  exceeds the 10 MB size limit",code:"file_too_large"},{status:413});b=Buffer.from(c)}catch{return e.NextResponse.json({error:"Failed to read request body"},{status:400})}try{let a=(0,g.V)(b).map(a=>{try{return{name:a.name,json:JSON.parse(a.content),parseError:null}}catch{retur
+CLUE: n{name:a.name,json:null,parseError:"Not valid JSON"}}});return e.NextResponse.json({entries:a})}catch(a){return e.NextResponse.json({error:(0,h.sanitizeErrorMessage)(a)||"Failed to extract ZIP",code:"extract_failed"},{status:400})}}f=(i.then?
+
+FILE: /app/.build/next/server/app/api/providers/claude-auth/import/route.js
+METHODS: not detected
+CLUE: (a){let b,c,d=await (0,f.xg)(a);if(d)return d;let o=(0,i.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let p=(0,m.Jb)(l.pvW,b);if((0,m.kf)(p))return e.NextResponse.json({error:p.error},{status:400});let{source:q,name:r,e
+CLUE: mail:s,overwriteExisting:t}=p.data;try{c="json"===q.kind?q.json:JSON.parse(q.text)}catch{return e.NextResponse.json({error:"Could not parse the content as JSON",code:"invalid_json"},{status:400})}try{let a,b=(0,h.ju)(c),d=await (0,h.y$)(b),{connection:f,created:g}=await (0,h
+CLUE: equestId,metadata:{provider:"claude",created:g,email:d.email||s,hasAccountUUID:!!d.accountUUID}}),e.NextResponse.json({connection:(a={...f},delete a.accessToken,delete a.refreshToken,delete a.idToken,delete a.apiKey,a.providerSpecificData&&(a.providerSpecificData=(0,n.vv)(a.pr
+CLUE: oviderSpecificData)),a),created:g})}catch(a){if(a instanceof g.pX)return e.NextResponse.json({error:a.message,code:a.code},{status:a.status});return e.NextResponse.json({error:(0,k.sanitizeErrorMessage)(a)||"Failed to import Claude auth"},{status:500})
+
+FILE: /app/.build/next/server/app/api/providers/claude-auth/import-bulk/route.js
+METHODS: not detected
+CLUE:  p(a){let b,c=await (0,f.xg)(a);if(c)return c;let d=(0,i.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let o=(0,m.Jb)(l.Jfi,b);if((0,m.kf)(o))return e.NextResponse.json({error:o.error},{status:400});let{entries:p,overwri
+CLUE: uestId:d.requestId,metadata:{provider:"claude",total:p.length,success:r.length,failed:s.length}}),e.NextResponse.json({success:r.length,failed:s.length,total:p.length,created:r,errors:s})}[f,g,h,l]=o.then?(await o)():o,d()}catch(a){d(a)}})},529294:a=>{a.exports=require("next/d
+
+FILE: /app/.build/next/server/app/api/providers/claude-auth/zip-extract/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: c=await (0,f.xg)(a);if(c)return c;if(Number(a.headers.get("content-length")||"0")>0xb00000)return e.NextResponse.json({error:"ZIP file exceeds the 10 MB size limit",code:"file_too_large"},{status:413});try{let c=await a.arrayBuffer();if(c.byteLength>0xb00000)return e.NextRespo
+CLUE:  exceeds the 10 MB size limit",code:"file_too_large"},{status:413});b=Buffer.from(c)}catch{return e.NextResponse.json({error:"Failed to read request body"},{status:400})}try{let a=(0,g.$)(b).map(a=>{try{return{name:a.name,json:JSON.parse(a.content),parseError:null}}catch{retur
+CLUE: n{name:a.name,json:null,parseError:"Not valid JSON"}}});return e.NextResponse.json({entries:a})}catch(a){return e.NextResponse.json({error:(0,h.sanitizeErrorMessage)(a)||"Failed to extract ZIP",code:"extract_failed"},{status:400})}}f=(i.then?
+
+FILE: /app/.build/next/server/app/api/providers/codex-auth/import/route.js
+METHODS: not detected
+CLUE: (a){let b,c,d=await (0,f.xg)(a);if(d)return d;let o=(0,i.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let p=(0,m.Jb)(l.y3Z,b);if((0,m.kf)(p))return e.NextResponse.json({error:p.error},{status:400});let{source:q,name:r,e
+CLUE: mail:s,overwriteExisting:t}=p.data;try{c="json"===q.kind?q.json:JSON.parse(q.text)}catch{return e.NextResponse.json({error:"Could not parse the content as JSON",code:"invalid_json"},{status:400})}try{let a,b=(0,h.S)(c),{connection:d,created:f}=await (0,h.z)(b,{name:r,email:s
+CLUE: .ipAddress||void 0,requestId:o.requestId,metadata:{provider:"codex",created:f,email:b.email||s}}),e.NextResponse.json({connection:(a={...d},delete a.accessToken,delete a.refreshToken,delete a.idToken,delete a.apiKey,a.providerSpecificData&&(a.providerSpecificData=(0,n.vv)(a.pr
+CLUE: oviderSpecificData)),a),created:f})}catch(a){if(a instanceof g.KJ)return e.NextResponse.json({error:a.message,code:a.code},{status:a.status});return e.NextResponse.json({error:(0,k.sanitizeErrorMessage)(a)||"Failed to import Codex auth"},{status:500})}
+
+FILE: /app/.build/next/server/app/api/providers/codex-auth/import-bulk/route.js
+METHODS: not detected
+CLUE:  p(a){let b,c=await (0,f.xg)(a);if(c)return c;let d=(0,i.Uy)(a);try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let o=(0,m.Jb)(l.Uk8,b);if((0,m.kf)(o))return e.NextResponse.json({error:o.error},{status:400});let{entries:p,overwri
+CLUE: questId:d.requestId,metadata:{provider:"codex",total:p.length,success:r.length,failed:s.length}}),e.NextResponse.json({success:r.length,failed:s.length,total:p.length,created:r,errors:s})}[f,g,h,l]=o.then?(await o)():o,d()}catch(a){d(a)}})},579646:a=>{a.exports=require("child_
+
+FILE: /app/.build/next/server/app/api/providers/codex-auth/zip-extract/route.js
+METHODS: not detected
+CLUE: c=await (0,f.xg)(a);if(c)return c;if(Number(a.headers.get("content-length")||"0")>0xb00000)return e.NextResponse.json({error:"ZIP file exceeds the 10 MB size limit",code:"file_too_large"},{status:413});try{let c=await a.arrayBuffer();if(c.byteLength>0xb00000)return e.NextRespo
+CLUE:  exceeds the 10 MB size limit",code:"file_too_large"},{status:413});b=Buffer.from(c)}catch{return e.NextResponse.json({error:"Failed to read request body"},{status:400})}try{let a=(0,g.c)(b).map(a=>{try{return{name:a.name,json:JSON.parse(a.content),parseError:null}}catch{retur
+CLUE: n{name:a.name,json:null,parseError:"Not valid JSON"}}});return e.NextResponse.json({entries:a})}catch(a){return e.NextResponse.json({error:(0,h.sanitizeErrorMessage)(a)||"Failed to extract ZIP",code:"extract_failed"},{status:400})}}f=(i.then?
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+
+FILE: /app/.build/next/server/app/api/providers/command-code/auth/apply/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: .randomBytes)(32).toString("base64url")}function l(a){return(0,i.QW)(a)}function m(a,b={}){return g.NextResponse.json(a,{...b,headers:{"Cache-Control":"no-store",...b.headers||{}}})}function n(a){return a&&w.includes(a)?a:null}function o(a){let b=a.headers.get("access-control-
+
+FILE: /app/.build/next/server/app/api/providers/command-code/auth/callback/route.js
+METHODS: not detected
+CLUE: .randomBytes)(32).toString("base64url")}function l(a){return(0,i.QW)(a)}function m(a,b={}){return g.NextResponse.json(a,{...b,headers:{"Cache-Control":"no-store",...b.headers||{}}})}function n(a){return a&&w.includes(a)?a:null}function o(a){let b=a.headers.get("access-control-
+
+FILE: /app/.build/next/server/app/api/providers/command-code/auth/start/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: .randomBytes)(32).toString("base64url")}function l(a){return(0,i.QW)(a)}function m(a,b={}){return g.NextResponse.json(a,{...b,headers:{"Cache-Control":"no-store",...b.headers||{}}})}function n(a){return a&&w.includes(a)?a:null}function o(a){let b=a.headers.get("access-control-
+
+FILE: /app/.build/next/server/app/api/providers/command-code/auth/status/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: .randomBytes)(32).toString("base64url")}function l(a){return(0,i.QW)(a)}function m(a,b={}){return g.NextResponse.json(a,{...b,headers:{"Cache-Control":"no-store",...b.headers||{}}})}function n(a){return a&&w.includes(a)?a:null}function o(a){let b=a.headers.get("access-control-
+
+FILE: /app/.build/next/server/app/api/quota/keys/[id]/models/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: await (0,g.xg)(a);if(c)return c;try{let{id:a}=await b,c=await (0,h.getApiKeyById)(a);if(!c)return e.NextResponse.json((0,f.buildErrorBody)(404,"API key not found"),{status:404});let d=Array.isArray(c.allowedQuotas)?c.allowedQuotas:[],g=await (0,j.resolveQuotaKeyScope)(d),l=[];
+CLUE: ypeof a.name&&a.name.length>0).map(a=>({id:a.name})),n=(0,k.J)(m,g.poolSlugs).map(a=>a.id);return e.NextResponse.json({models:n})}catch(b){let a=b instanceof Error?b.message:"Failed to resolve key models";return e.NextResponse.json((0,f.buildErrorBody)(500,a),{status:500})}}d(
+CLUE: ion(()=>(b.prepare("DELETE FROM quota_pool_connections WHERE pool_id = ?").run(a),b.prepare(`UPDATE api_keys SET allowed_quotas = COALESCE(
+CLUE:  (SELECT json_group_array(value) FROM json_each(api_keys.allowed_quotas) WHERE value != ?),
+
+FILE: /app/.build/next/server/app/api/services/9router/rotate-key/route.js
+METHODS: not detected
+
+FILE: /app/.build/next/server/app/api/settings/authz-inventory/route.js
+METHODS: not detected
+CLUE: ,message:"Service temporarily unavailable",type:"server_error"})}return(0,h.W)({status:403,message:"Invalid API key",type:"invalid_request"})}return(0,h.W)({status:401,message:"Authentication required",type:"invalid_request"})}function n(a){return!j.Ar.some(b=>b===a||a.start
+CLUE: OnlyManageScopeBypassPrefixes,g=Array.isArray(d)?d.filter(a=>"string"==typeof a):[...j.KH];return e.NextResponse.json({tiers:b,bypassEnabled:c,bypassPrefixes:g,spawnCapablePrefixes:[...j.Ar],cors:(0,k.gR)()})}catch(a){return console.log("Error loading authz inventory:",a),e.Ne
+
+FILE: /app/.build/next/server/app/api/usage/key-quota/route.js
+METHODS: not detected
+CLUE: tApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{retu
+CLUE: (0,f.xg)(a);if(b)return b;try{let{searchParams:b}=new URL(a.url),c=b.get("apiKeyId");if(!c)return e.NextResponse.json({error:"apiKeyId query param is required"},{status:400});let d=(0,g.YX)(c);return e.NextResponse.json(d)}catch(a){return console.error("Error fetching key quot
+CLUE: a:",a),e.NextResponse.json({error:"Failed to fetch key quota"},{status:500})}}async function l(a){let b,c=await (0,f.xg)(a);if(c)return c;try{b=await a.json()}catch{return e.NextResponse
+CLUE: ",message:"Invalid JSON body"}]}},{status:400})}try{let a=(0,i.Jb)(h.ftU,b);if((0,i.kf)(a))return e.NextResponse.json({error:a.error},{status:400});let{apiKeyId:c,tpmLimit:d,rpmLimit:f,monthlyAmountUsd:j}=a.data,k=(0,g.P8)(c,{tpmLimit:d,rpmLimit:f,monthlyAmountUsd:j});return e
+CLUE: .NextResponse.json({success:!0,apiKeyId:c,limits:k})}catch(a){return console.error("Error setting key quota:",a),e.NextResponse.json({error:"Failed to set key quota"},{status:500
+
+FILE: /app/.build/next/server/app/api/v1/registered-keys/[id]/revoke/route.js
+METHODS: not detected
+CLUE: ),t=c(137527);let u=new d.AppRouteRouteModule({definition:{kind:e.RouteKind.APP_ROUTE,page:"/api/v1/registered-keys/[id]/revoke/route",pathname:"/api/v1/registered-keys/[id]/revoke",filename:"route",bundlePath:"app/api/v1/registered-keys/[id]/revoke/route"},distDir:".build/n
+CLUE: ext",relativeProjectDir:"",resolvedPagePath:"/app/src/app/api/v1/registered-keys/[id]/revoke/route.ts",nextConfigOutput:"standalone",userland:()=>c(857725),...{}}),{workAsyncStorage:v,workUnitAsyncStorage:w,serverHooks:x}=u;function y(){ret
+CLUE: sDev&&(0,g.addRequestMeta)(a,"devRequestTimingInternalsEnd",process.hrtime.bigint());let d="/api/v1/registered-keys/[id]/revoke/route";"/index"===d&&(d="/");let f=await u.prepare(a,b,{srcPage:d,multiZoneDraftMode:!1});if(!f)return b.statusCode=400,b.end("Bad Request"),null==
+CLUE: 592),f=c(905992),g=c(339683),h=a([f]);async function i(a,{params:b}){if(!await (0,f.wR)(a))return e.NextResponse.json({error:{message:"Authentication required"}},{status:401});let c=await b;return(0,g.Od)(c.id)?e.NextResponse.json({success:!0,id:c.id,revokedAt:new Date().toISO
+CLUE: String()}):e.NextResponse.json({error:"Key not found or already revoked"},{status:404})}f=(h.then?(await h)():h)[0],d()}catch(a){d(a)}})},903295:a=>{"use strict";a.exports=require("next/dist
+
+FILE: /app/.build/next/server/app/api/v1/registered-keys/[id]/route.js
+METHODS: not detected
+CLUE: ),t=c(137527);let u=new d.AppRouteRouteModule({definition:{kind:e.RouteKind.APP_ROUTE,page:"/api/v1/registered-keys/[id]/route",pathname:"/api/v1/registered-keys/[id]",filename:"route",bundlePath:"app/api/v1/registered-keys/[id]/route"},distDir:".build/next",relativeProjectD
+CLUE: ir:"",resolvedPagePath:"/app/src/app/api/v1/registered-keys/[id]/route.ts",nextConfigOutput:"standalone",userland:()=>c(444872),...{}}),{workAsyncStorage:v,workUnitAsyncStorage:w,serverHooks:x}=u;function y(){return(0,f
+CLUE: sDev&&(0,g.addRequestMeta)(a,"devRequestTimingInternalsEnd",process.hrtime.bigint());let d="/api/v1/registered-keys/[id]/route";"/index"===d&&(d="/");let f=await u.prepare(a,b,{srcPage:d,multiZoneDraftMode:!1});if(!f)return b.statusCode=400,b.end("Bad Request"),null==c.waitU
+CLUE: 592),f=c(905992),g=c(339683),h=a([f]);async function i(a,{params:b}){if(!await (0,f.wR)(a))return e.NextResponse.json({error:{message:"Authentication required"}},{status:401});let c=await b,d=(0,g.ul)(c.id);return d?e.NextResponse.json({key:d}):e.NextResponse.json({error:"Key
+CLUE: not found"},{status:404})}async function j(a,{params:b}){if(!await (0,f.wR)(a))return e.NextResponse.json({error:{message:"Authentication required"}},{status:401});let c=await b;return(0,g.Od)(c.id)?e.NextResponse.json({success:!0,id:c.id,revokedAt:new Date().toISO
+
+FILE: /app/.build/next/server/app/api/v1/registered-keys/route.js
+METHODS: not detected
+CLUE: udget:f.z.number().int().positive().optional()});async function k(a){if(!await (0,g.wR)(a))return e.NextResponse.json({error:{message:"Authentication required"}},{status:401});let{searchParams:b}=new URL(a.url),c=b.get("provider")??void 0,d=b.get("accountId")??void 0;try{let a
+CLUE: =(0,i.zr)({provider:c,accountId:d});return e.NextResponse.json({keys:a,total:a.length})}catch(a){return console.error("[registered-keys] GET failed:",a),e.NextResponse.json({error:"Failed to list registered keys"},{status:
+CLUE: 500})}}async function l(a){let b;if(!await (0,g.wR)(a))return e.NextResponse.json({error:{message:"Authentication required"}},{status:401});try{b=await a.json()}catch{return e.NextResponse.json({error:"Invalid JSON body"},{status:400})}let c
+CLUE: =(0,h.Jb)(m,b);if((0,h.kf)(c))return e.NextResponse.json({error:c.error},{status:400});let{provider:d,accountId:f}=c.data;try{let a=(0,i.LB)(d,f);if(!a.allowed)return e.NextResponse.json({error:a.errorMessage,errorCo
+CLUE: de:a.errorCode},{status:429})}catch(a){return console.error("[registered-keys] quota check failed:",a),e.NextResponse.json({error:"Quota check failed"},{status:500})}try{let a=(0,i.$S)(c.data);if("idempotencyConflict"in a)return e.NextRe
+[opc@litellm-gateway ~]$
+
