@@ -1,0 +1,54 @@
+
+[opc@litellm-gateway ~]$ podman exec omniroute node -e '
+const fs = require("fs");
+const p = "/app/.build/next/server/middleware.js";
+const s = fs.readFileSync(p, "utf8");
+console.log("FILE SIZE:", s.length);
+for (const term of ["AUTH_002", "REQUIRE_API_KEY", "Authentication required", "Authorization", "api-key", "x-api-key"]) {
+  let pos = -1, count = 0;
+  while ((pos = s.indexOf(term, pos + 1)) !== -1 && count < 2) {
+    console.log("\nMATCH:", term, "| POS:", pos);
+    console.log(s.slice(Math.max(0, pos - 250), Math.min(s.length, pos + 500)).replace(/\n/g, " "));
+    count++;
+  }
+  if (!count) console.log("\nNO MATCH:", term);
+}
+'
+FILE SIZE: 2582798
+
+MATCH: AUTH_002 | POS: 2156356
+a.request.method.toUpperCase()))return!1;try{return"1"===new URL(a.request.url,"http://localhost").searchParams.get("handshake")}catch{return!1}}(a)?await (0,e.Iz)(a.request)?(0,i.c)({kind:"dashboard_session",id:"dashboard"}):(0,f.od)()?(0,i.k)(401,"AUTH_002","Authentication required"):(0,i.c)({kind:"anonymous",id:"local"}):(0,i.c)({kind:"anonymous",id:"ws-handshake"});let{validateApiKey:d}=await Promise.resolve().then(c.bind(c,705784));return await d(b)?(0,i.c)({kind:"client_api_key",id:k(b)}):(0,f.od)()?(0,i.k)(401,"AUTH_002","Invalid API key"):(console.warn(`[clientApiPolicy] invalid bearer presented to ${a.classification.normalizedPath} but REQUIRE_API_KEY=false — falling through to anonymous (key_id=${k(b)})`),(0,i.c)({kind:"anonymous"
+
+MATCH: AUTH_002 | POS: 2156630
+n required"):(0,i.c)({kind:"anonymous",id:"local"}):(0,i.c)({kind:"anonymous",id:"ws-handshake"});let{validateApiKey:d}=await Promise.resolve().then(c.bind(c,705784));return await d(b)?(0,i.c)({kind:"client_api_key",id:k(b)}):(0,f.od)()?(0,i.k)(401,"AUTH_002","Invalid API key"):(console.warn(`[clientApiPolicy] invalid bearer presented to ${a.classification.normalizedPath} but REQUIRE_API_KEY=false — falling through to anonymous (key_id=${k(b)})`),(0,i.c)({kind:"anonymous",id:"local"}))}};d()}catch(a){d(a)}})},781357:(a,b,c)=>{"use strict";c.d(b,{Di:()=>f,JG:()=>e,Sf:()=>d.Sf,Tv:()=>j,Xn:()=>i,hz:()=>k,y8:()=>l});var d=c(715989);let e="Blocked private or local provider URL";class f extends Error{constructor(a,b){super(a),this.name="OutboundU
+
+MATCH: REQUIRE_API_KEY | POS: 1937592
+n f(a){let b=(0,d.dE)(a);if(void 0!==b)return b;let c=process.env[a];if(void 0!==c&&""!==c)return c;let f=e.N.find(b=>b.key===a);return f?.defaultValue??"false"}function g(a){let b=f(a);return"true"===b||"1"===b||"yes"===b}function h(){try{return g("REQUIRE_API_KEY")}catch(a){return console.error("[featureFlags] Failed to resolve REQUIRE_API_KEY, defaulting to required:",a instanceof Error?a.message:a),!0}}function i(){try{return g("OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK")}catch(a){return console.error("[featureFlags] Failed to resolve OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK, defaulting to disabled:",a instanceof Error?a.message:a),!1}}function j(){try{return g("PROXY_SKIP_RECENTLY_FAILED")}catch(a){return console.error("[featu
+
+MATCH: REQUIRE_API_KEY | POS: 1937674
+&&""!==c)return c;let f=e.N.find(b=>b.key===a);return f?.defaultValue??"false"}function g(a){let b=f(a);return"true"===b||"1"===b||"yes"===b}function h(){try{return g("REQUIRE_API_KEY")}catch(a){return console.error("[featureFlags] Failed to resolve REQUIRE_API_KEY, defaulting to required:",a instanceof Error?a.message:a),!0}}function i(){try{return g("OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK")}catch(a){return console.error("[featureFlags] Failed to resolve OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK, defaulting to disabled:",a instanceof Error?a.message:a),!1}}function j(){try{return g("PROXY_SKIP_RECENTLY_FAILED")}catch(a){return console.error("[featureFlags] Failed to resolve PROXY_SKIP_RECENTLY_FAILED, defaulting to enabled:",a i
+
+MATCH: Authentication required | POS: 1975930
+ILABLE","Service temporarily unavailable")}let u=(c=(b=a.request.headers).get("authorization")??b.get("Authorization"),"string"==typeof c&&c.trim().toLowerCase().startsWith("bearer "));return(0,h.k)(u?403:401,"AUTH_001",u?"Invalid management token":"Authentication required")}};d()}catch(a){d(a)}})},720697:(a,b,c)=>{"use strict";c.d(b,{a:()=>h,l:()=>i});var d=c(502928);c(455511),c(315130);var e=c(244629);let f=Symbol.for("omniroute.selfLoopSecret"),g=globalThis;function h(a){let b=g[f]??null;return null!==b&&(0,e.b)(a,b)}function i(a){return h(a)?{id:d.Vn,name:"Internal self-loop",scopes:["internal:self-loop"],allowedEndpoints:["chat","audio"]}:{}}},722130:(a,b,c)=>{"use strict";let{states:d,opcodes:e}=c(811315),{isUtf8:f}=c(504573),{removeH
+
+MATCH: Authentication required | POS: 2156367
+ethod.toUpperCase()))return!1;try{return"1"===new URL(a.request.url,"http://localhost").searchParams.get("handshake")}catch{return!1}}(a)?await (0,e.Iz)(a.request)?(0,i.c)({kind:"dashboard_session",id:"dashboard"}):(0,f.od)()?(0,i.k)(401,"AUTH_002","Authentication required"):(0,i.c)({kind:"anonymous",id:"local"}):(0,i.c)({kind:"anonymous",id:"ws-handshake"});let{validateApiKey:d}=await Promise.resolve().then(c.bind(c,705784));return await d(b)?(0,i.c)({kind:"client_api_key",id:k(b)}):(0,f.od)()?(0,i.k)(401,"AUTH_002","Invalid API key"):(console.warn(`[clientApiPolicy] invalid bearer presented to ${a.classification.normalizedPath} but REQUIRE_API_KEY=false — falling through to anonymous (key_id=${k(b)})`),(0,i.c)({kind:"anonymous",id:"local"
+
+MATCH: Authorization | POS: 1219
+e"].map(a=>a.toLowerCase()));function f(a){let b=String(a).trim().toLowerCase();return d.has(String(b).trim().toLowerCase())||e.has(b)}},940:(a,b,c)=>{"use strict";c.d(b,{I5:()=>k,setRuntimeAllowedOrigins:()=>h});let d="CORS_ORIGIN",e="Content-Type, Authorization, x-api-key, anthropic-version, x-omniroute-connection, X-OmniRoute-Lease-Owner, X-OmniRoute-Lease-Generation, x-internal-test, accept",f="GET, POST, PUT, DELETE, PATCH, OPTIONS",g=new Set;function h(a){g=i(a)}function i(a){let b=new Set;if(!a)return b;for(let c of a.split(",")){let a=c.trim();a&&b.add(j(a))}return b}function j(a){let b=a.toLowerCase();for(;b.endsWith("/");)b=b.slice(0,-1);return b}function k(a,b,c=!1){let h=b.headers.get("origin"),l=function(a){let b,c,e;if((b=proc
+
+MATCH: Authorization | POS: 60094
+xtExpiresAt:null===j?null:new Date(j).toISOString()},tokens:d}}let k=Buffer.from([0,0,0,0,0]);async function l(a,b=fetch){if(!a)return null;try{let c=await b("https://grok.com/prod_mc_billing.ConsumerUiSvc/GetRemainingResets",{method:"POST",headers:{Authorization:["Bearer",a].join(" "),"Content-Type":"application/grpc-web+proto","X-Grpc-Web":"1"},body:k,signal:AbortSignal.timeout(8e3)});if(!c.ok)return null;let e=function(a,b=Date.now()){if(!a||0===a.length)return{ok:!1,reason:"empty-buffer"};try{if(null===d(a,0)){let c=j(a,b);if(!c)return{ok:!1,reason:"malformed"};return{ok:!0,...c}}let{dataPayload:c,sawData:e,trailerStatus:f}=function(a){let b=0,c=null,e=!1,f=null;for(;b<a.length;){let g=d(a,b);if(!g)break;let h=g.payloadStart+g.payloadLe
+
+MATCH: api-key | POS: 927
+trailer","upgrade","x-forwarded-for","x-forwarded-host","x-forwarded-proto","x-forwarded-port","x-forwarded-server","x-real-ip","cf-connecting-ip","true-client-ip","client-ip","forwarded","via"].map(a=>a.toLowerCase())),e=new Set(["authorization","x-api-key","x-goog-api-key","api-key","cookie"].map(a=>a.toLowerCase()));function f(a){let b=String(a).trim().toLowerCase();return d.has(String(b).trim().toLowerCase())||e.has(b)}},940:(a,b,c)=>{"use strict";c.d(b,{I5:()=>k,setRuntimeAllowedOrigins:()=>h});let d="CORS_ORIGIN",e="Content-Type, Authorization, x-api-key, anthropic-version, x-omniroute-connection, X-OmniRoute-Lease-Owner, X-OmniRoute-Lease-Generation, x-internal-test, accept",f="GET, POST, PUT, DELETE, PATCH, OPTIONS",g=new Set;functi
+
+MATCH: api-key | POS: 944
+","x-forwarded-for","x-forwarded-host","x-forwarded-proto","x-forwarded-port","x-forwarded-server","x-real-ip","cf-connecting-ip","true-client-ip","client-ip","forwarded","via"].map(a=>a.toLowerCase())),e=new Set(["authorization","x-api-key","x-goog-api-key","api-key","cookie"].map(a=>a.toLowerCase()));function f(a){let b=String(a).trim().toLowerCase();return d.has(String(b).trim().toLowerCase())||e.has(b)}},940:(a,b,c)=>{"use strict";c.d(b,{I5:()=>k,setRuntimeAllowedOrigins:()=>h});let d="CORS_ORIGIN",e="Content-Type, Authorization, x-api-key, anthropic-version, x-omniroute-connection, X-OmniRoute-Lease-Owner, X-OmniRoute-Lease-Generation, x-internal-test, accept",f="GET, POST, PUT, DELETE, PATCH, OPTIONS",g=new Set;function h(a){g=i(a)}fu
+
+MATCH: x-api-key | POS: 925
+,"trailer","upgrade","x-forwarded-for","x-forwarded-host","x-forwarded-proto","x-forwarded-port","x-forwarded-server","x-real-ip","cf-connecting-ip","true-client-ip","client-ip","forwarded","via"].map(a=>a.toLowerCase())),e=new Set(["authorization","x-api-key","x-goog-api-key","api-key","cookie"].map(a=>a.toLowerCase()));function f(a){let b=String(a).trim().toLowerCase();return d.has(String(b).trim().toLowerCase())||e.has(b)}},940:(a,b,c)=>{"use strict";c.d(b,{I5:()=>k,setRuntimeAllowedOrigins:()=>h});let d="CORS_ORIGIN",e="Content-Type, Authorization, x-api-key, anthropic-version, x-omniroute-connection, X-OmniRoute-Lease-Owner, X-OmniRoute-Lease-Generation, x-internal-test, accept",f="GET, POST, PUT, DELETE, PATCH, OPTIONS",g=new Set;func
+
+MATCH: x-api-key | POS: 1234
+LowerCase()));function f(a){let b=String(a).trim().toLowerCase();return d.has(String(b).trim().toLowerCase())||e.has(b)}},940:(a,b,c)=>{"use strict";c.d(b,{I5:()=>k,setRuntimeAllowedOrigins:()=>h});let d="CORS_ORIGIN",e="Content-Type, Authorization, x-api-key, anthropic-version, x-omniroute-connection, X-OmniRoute-Lease-Owner, X-OmniRoute-Lease-Generation, x-internal-test, accept",f="GET, POST, PUT, DELETE, PATCH, OPTIONS",g=new Set;function h(a){g=i(a)}function i(a){let b=new Set;if(!a)return b;for(let c of a.split(",")){let a=c.trim();a&&b.add(j(a))}return b}function j(a){let b=a.toLowerCase();for(;b.endsWith("/");)b=b.slice(0,-1);return b}function k(a,b,c=!1){let h=b.headers.get("origin"),l=function(a){let b,c,e;if((b=process.env.CORS_AL
+[opc@litellm-gateway ~]$
