@@ -1,0 +1,87 @@
+
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+podman exec omniroute node -e '
+const fs=require("fs");
+const files=[
+  "/app/.build/next/server/chunks/32948.js",
+  "/app/.build/next/server/app/api/usage/combo-trace/[id]/route.js",
+  "/app/.build/next/server/app/api/combos/[id]/route.js"
+];
+const terms=[
+  "context-relay",
+  "handoffProviders",
+  "context-handoff",
+  "Trying model",
+  "connectionId",
+  "combo trace"
+];
+for(const f of files){
+  console.log("\n===== "+f+" =====");
+  if(!fs.existsSync(f)){
+    console.log("FILE_NOT_FOUND");
+    continue;
+  }
+  const s=fs.readFileSync(f,"utf8");
+  let shown=0;
+  for(const term of terms){
+    let from=0, i;
+    while((i=s.indexOf(term,from))!==-1 && shown<12){
+      console.log("\n--- "+term+" @ "+i+" ---");
+      console.log(s.slice(Math.max(0,i-350),Math.min(s.length,i+850)).replace(/\s+/g," "));
+      shown++;
+      from=i+term.length;
+      if(shown>=12) break;
+    }
+    if(shown>=12) break;
+  }
+  if(!shown) console.log("No matching implementation clues found.");
+}
+'
+
+===== /app/.build/next/server/chunks/32948.js =====
+
+--- context-relay @ 79038 ---
+?.messages)&&H.body.messages.length>0?H.body.messages:Array.isArray(H.body?.input)?H.body.input:[];(0,j.XH)({sessionId:H.relayOptions.sessionId,comboName:H.combo.name,messages:b,prevModel:a,currModel:M,universalConfig:T,handleSingleModel:H.handleSingleModelWithTimeout})}(0,k.gl)(H.relayOptions.sessionId,H.combo.name,M,O,L.connectionId??void 0)}if("context-relay"===H.strategy&&H.relayOptions?.sessionId&&H.relayConfig&&(H.relayConfig.handoffProviders??[]).includes(O)&&"codex"===O){let a=(0,p.bb)(H.relayOptions.sessionId);if(a){let b=await (0,m.fetchCodexQuota)(a).catch(()=>null);if(b){let c=[b.windows?.session?.resetAt,b.windows?.weekly?.resetAt,b.resetAt].filter(a=>"string"==typeof a&&a.length>0).sort((a,b)=>a.localeCompare(b)),d=Array.isArray(H.body?.messages)&&H.body.messages.length>0?H.body.messages:Array.isArray(H.body?.input)?H.body.input:[];(0,j.md)({sessionId:H.relayOptions.sessionId,comboName:H.combo.name,connectionId:a,percentUsed:b.percentUsed,messages:d,model:M,expiresAt:c[0]||null,config:H.relayConfig,handleSingleModel:H.handleSingleModelWithTimeout})}}}if(H.sticky.messageHash&&L.connectionId&&(0,q.c1)(H.sticky.messageHash,L.connectionId),O){let a=f||void 0;(0,E.P)({comb
+
+--- context-relay @ 101780 ---
+; ${b}.`)}return G()}let L=function(){return q?G():(r=!1,J(),H())}},230674:(a,b,c)=>{c.a(a,async(a,d)=>{try{c.d(b,{u5:()=>g});var e=c(666286),f=a([e]);e=(f.then?(await f)():f)[0];let h=new Set(["priority","weighted","round-robin","random","p2c","least-used","cost-optimized","lkgp","fill-first","strict-random","context-optimized","cache-optimized","context-relay","fusion","pipeline"]);async function g(a){var b;let c,{strategy:d,targets:f,comboName:g,config:i,settings:j,log:k}=a;if(0===f.length||!h.has(d)||i?.connectionAwareExpansion!==!0&&(i?.connectionAwareExpansion===!1||j?.connectionAwareExpansion!==!0))return f;let l=(b=i?.connectionAwareExpansionMaxPerTarget,c=Number(b),!Number.isFinite(c)||c<1?8:Math.min(Math.floor(c),64));try{let b=a.__testExpander??((a,b,c,d)=>(0,e.p1)(a,b,c,d)),{expandedTargets:c}=await b(f,g,k,a.apiKeyAllowedConnectionIds??null),d=new Map,h=[];for(let a of c){let b=a.stepId??a.executionKey,c=d.get(b)??0;c>=l||(d.set(b,c+1),h.push(a))}return h}catch(a){return k.warn?.("COMBO","Connection-aware expansion failed; passing targets through",{comboName:g,strategy:d,err:a}),f}}d()}catch(a){d(a)}})},236821:(a,b,c)=>{c.d(b,{j:()=>d});let d={FREE:"free",CHEAP:"cheap"
+
+--- context-relay @ 183059 ---
+:b});t=c.orderedTargets,u=c.decrementInflight,q.info("COMBO",`Quota-share ordering: ${t[0]?.modelStr}${t[0]?.connectionId?` (${t[0].connectionId})`:""} selected (DRR+P2C)`)}return{orderedTargets:t,quotaShareRelease:u}}[f,g,h,k]=n.then?(await n)():n,d()}catch(a){d(a)}})},529032:(a,b,c)=>{c.d(b,{lr:()=>f});let d=["priority","weighted","round-robin","context-relay","fill-first","p2c","random","least-used","cost-optimized","reset-aware","reset-window","headroom","quota-weighted","strict-random","auto","lkgp","context-optimized","cache-optimized","fusion","pipeline"],e=["quota-share"];function f(a){if("string"!=typeof a)return"priority";let b=a.trim().toLowerCase();return"usage"===b?"least-used":"context"===b?"context-optimized":"weekly-reset"===b||"reset-window-order"===b?"reset-window":e.includes(b)||d.includes(b)?b:"priority"}},557785:(a,b,c)=>{c.a(a,async(a,d)=>{try{c.d(b,{M:()=>j,m:()=>i});var e=c(658466),f=c(27968),g=a([e]);e=(g.then?(await g)():g)[0];let k=["minimal","medium","xhigh","none","high","max","low"];function h(a){let b=(0,e.j2)(a);if(null!=b)return b;let c=(0,f.Xh)(a),d="string"==typeof c.model?c.model.trim():"",g=function(a){let b=String(a||"").trim();if(!b)return nul
+
+--- context-relay @ 194049 ---
+&(d=await h(c),b.set(c,d)),(0,f.tf)(d,a)}}f=(g.then?(await g)():g)[0],d()}catch(a){d(a)}})},596202:(a,b,c)=>{c.a(a,async(a,d)=>{try{c.d(b,{X:()=>n});var e=c(529032),f=c(790043),g=c(347546),h=c(30419),i=c(117878),j=c(507481),k=c(666031),l=c(5717),m=a([f,l]);function n(a){let{combo:b,settings:c,relayOptions:d}=a,m=(0,e.lr)(b.strategy||"priority"),n="context-relay"===m?(0,f.fX)(d?.config||null):null,o=c?(0,j.xv)(c):(0,j.xv)(null),p=(0,f.WE)(b.universal_handoff||b.universalHandoff,d?.universalHandoffConfig),{effectiveSessionId:q,pinnedModel:r}=function(a){let{combo:b,relayOptions:c,log:d}=a,e=b.context_cache_protection?c?.sessionId??(0,l.Tg)(a.body):null,h=null;if(b.context_cache_protection&&e&&!a.body?.[f.Wm]){let c=(0,g.uv)(e,b.name);c&&(a.body={...a.body,model:c},h=c,d.info("COMBO",`[#401] Context cache: pinned model=${c} (server-side)`))}return{effectiveSessionId:e,pinnedModel:h}}(a),{body:s}=(0,h.I1)(a.body,b,"");a.body=s;let t=a.body?.stream===!0,u=(0,i.q1)(b,c),v=(0,i.w_)(u,k.MT,m,o.comboCooldownWait),w=u.comboTimeoutMs||0,x=!1!==u.reasoningTokenBufferEnabled;return{strategy:m,relayConfig:n,resilienceSettings:o,universalHandoffConfig:p,effectiveSessionId:q,pinnedModel:r,clientRe
+
+--- context-relay @ 268760 ---
+d)return;let d=k(a.config);if(0===d.handoffProviders.length||a.percentUsed<d.handoffThreshold||a.percentUsed>=.95||((0,e.jc)(),(0,e.fd)(a.sessionId,a.comboName)))return;let f=(b=a.sessionId,c=a.comboName,`${b}::${c}`);A.has(f)||(A.add(f),setImmediate(()=>{s({...a,sessionId:a.sessionId,connectionId:a.connectionId,config:d}).catch(a=>{console.warn("[context-relay] Handoff generation failed:",a?.message||a)}).finally(()=>{A.delete(f)})}))}let E=new Map;function u(a,b,c){console.warn(`[universal-handoff] ${a} (combo=${b}): ${c}`)}async function v(a){try{return r(await a.clone().json())}catch{return await a.clone().text().catch(()=>"")}}async function w(a){let b=n(Array.isArray(a.messages)?a.messages:[],a.maxMessages,a.relayMode),c=m(b);if(!c)return u("unavailable",a.comboName,"empty selected-message history"),"unavailable";let d=B.replace("{HISTORY}",c),f=a.handoffModel||a.currModel;if(a.providerAllowlist.length>0){let b=f.indexOf("/"),c=b>0?f.slice(0,b):"";if(c&&!a.providerAllowlist.includes(c))return"unavailable"}let g=await a.handleSingleModel({model:f,messages:[{role:"user",content:d}],stream:!1,max_tokens:800,temperature:.1,_omnirouteSkipContextRelay:!0,_omnirouteInternalRequest:"
+
+--- handoffProviders @ 79124 ---
+ody.input:[];(0,j.XH)({sessionId:H.relayOptions.sessionId,comboName:H.combo.name,messages:b,prevModel:a,currModel:M,universalConfig:T,handleSingleModel:H.handleSingleModelWithTimeout})}(0,k.gl)(H.relayOptions.sessionId,H.combo.name,M,O,L.connectionId??void 0)}if("context-relay"===H.strategy&&H.relayOptions?.sessionId&&H.relayConfig&&(H.relayConfig.handoffProviders??[]).includes(O)&&"codex"===O){let a=(0,p.bb)(H.relayOptions.sessionId);if(a){let b=await (0,m.fetchCodexQuota)(a).catch(()=>null);if(b){let c=[b.windows?.session?.resetAt,b.windows?.weekly?.resetAt,b.resetAt].filter(a=>"string"==typeof a&&a.length>0).sort((a,b)=>a.localeCompare(b)),d=Array.isArray(H.body?.messages)&&H.body.messages.length>0?H.body.messages:Array.isArray(H.body?.input)?H.body.input:[];(0,j.md)({sessionId:H.relayOptions.sessionId,comboName:H.combo.name,connectionId:a,percentUsed:b.percentUsed,messages:d,model:M,expiresAt:c[0]||null,config:H.relayConfig,handleSingleModel:H.handleSingleModelWithTimeout})}}}if(H.sticky.messageHash&&L.connectionId&&(0,q.c1)(H.sticky.messageHash,L.connectionId),O){let a=f||void 0;(0,E.P)({comboName:H.combo.name,executionKey:L.executionKey,comboId:H.combo.id,provider:O,connectio
+
+--- handoffProviders @ 264448 ---
+),handoffModel:j("handoffModel",C.handoffModel),ttlMinutes:k("ttlMinutes",C.ttlMinutes,1,10080),preserveSystemPrompt:i("preserveSystemPrompt",C.preserveSystemPrompt),relayMode:"schema-locked"===j("relayMode","standard")?"schema-locked":"standard"}}function k(a){let b=Number(a?.handoffThreshold),c=Number(a?.maxMessagesForSummary),d=Array.isArray(a?.handoffProviders),e=d?(a?.handoffProviders).map(a=>"string"==typeof a?a.trim().toLowerCase():"").filter(Boolean):["codex"];return{handoffModel:"string"==typeof a?.handoffModel&&a.handoffModel.trim().length>0?a.handoffModel.trim():"",handoffThreshold:Number.isFinite(b)&&b>0&&b<.95?b:.85,handoffProviders:d?e:["codex"],maxMessagesForSummary:Number.isFinite(c)&&c>=5&&c<=100?Math.round(c):30,relayMode:a?.relayMode==="schema-locked"?"schema-locked":"standard"}}function l(a){return"string"==typeof a?a:Array.isArray(a)?a.map(a=>a&&"object"==typeof a?"string"==typeof a.text?String(a.text):"string"==typeof a.content?String(a.content):"":"").filter(Boolean).join("\n"):""}function m(a){return a.map((a,b)=>{let c="string"==typeof a.role?a.role:"unknown",d=l(a.content).trim();return d?`[${b+1}] ${c.toUpperCase()}: ${d}`:""}).filter(Boolean).join("\n\n"
+
+--- handoffProviders @ 264474 ---
+odel",C.handoffModel),ttlMinutes:k("ttlMinutes",C.ttlMinutes,1,10080),preserveSystemPrompt:i("preserveSystemPrompt",C.preserveSystemPrompt),relayMode:"schema-locked"===j("relayMode","standard")?"schema-locked":"standard"}}function k(a){let b=Number(a?.handoffThreshold),c=Number(a?.maxMessagesForSummary),d=Array.isArray(a?.handoffProviders),e=d?(a?.handoffProviders).map(a=>"string"==typeof a?a.trim().toLowerCase():"").filter(Boolean):["codex"];return{handoffModel:"string"==typeof a?.handoffModel&&a.handoffModel.trim().length>0?a.handoffModel.trim():"",handoffThreshold:Number.isFinite(b)&&b>0&&b<.95?b:.85,handoffProviders:d?e:["codex"],maxMessagesForSummary:Number.isFinite(c)&&c>=5&&c<=100?Math.round(c):30,relayMode:a?.relayMode==="schema-locked"?"schema-locked":"standard"}}function l(a){return"string"==typeof a?a:Array.isArray(a)?a.map(a=>a&&"object"==typeof a?"string"==typeof a.text?String(a.text):"string"==typeof a.content?String(a.content):"":"").filter(Boolean).join("\n"):""}function m(a){return a.map((a,b)=>{let c="string"==typeof a.role?a.role:"unknown",d=l(a.content).trim();return d?`[${b+1}] ${c.toUpperCase()}: ${d}`:""}).filter(Boolean).join("\n\n")}function n(a,b,c){let d=
+
+--- handoffProviders @ 264735 ---
+reshold),c=Number(a?.maxMessagesForSummary),d=Array.isArray(a?.handoffProviders),e=d?(a?.handoffProviders).map(a=>"string"==typeof a?a.trim().toLowerCase():"").filter(Boolean):["codex"];return{handoffModel:"string"==typeof a?.handoffModel&&a.handoffModel.trim().length>0?a.handoffModel.trim():"",handoffThreshold:Number.isFinite(b)&&b>0&&b<.95?b:.85,handoffProviders:d?e:["codex"],maxMessagesForSummary:Number.isFinite(c)&&c>=5&&c<=100?Math.round(c):30,relayMode:a?.relayMode==="schema-locked"?"schema-locked":"standard"}}function l(a){return"string"==typeof a?a:Array.isArray(a)?a.map(a=>a&&"object"==typeof a?"string"==typeof a.text?String(a.text):"string"==typeof a.content?String(a.content):"":"").filter(Boolean).join("\n"):""}function m(a){return a.map((a,b)=>{let c="string"==typeof a.role?a.role:"unknown",d=l(a.content).trim();return d?`[${b+1}] ${c.toUpperCase()}: ${d}`:""}).filter(Boolean).join("\n\n")}function n(a,b,c){let d=a.filter(a=>a&&"object"==typeof a),e=d.filter(a=>"string"==typeof a.role&&("system"===a.role||"developer"===a.role)),g=d.filter(a=>"string"!=typeof a.role||"system"!==a.role&&"developer"!==a.role),h=[..."schema-locked"===c?[...g.slice(-b)]:[...e,...g.slice(-b)]
+
+--- handoffProviders @ 268446 ---
+?a.messages.length:0,model:c,warningThresholdPct:b.handoffThreshold,generatedAt:new Date().toISOString(),expiresAt:a.expiresAt||new Date(Date.now()+18e6).toISOString()}):u("unparseable",a.comboName,`model=${c} contentPreview=${JSON.stringify(i.slice(0,200))}`)}function t(a){var b,c;if(!a.sessionId||!a.connectionId)return;let d=k(a.config);if(0===d.handoffProviders.length||a.percentUsed<d.handoffThreshold||a.percentUsed>=.95||((0,e.jc)(),(0,e.fd)(a.sessionId,a.comboName)))return;let f=(b=a.sessionId,c=a.comboName,`${b}::${c}`);A.has(f)||(A.add(f),setImmediate(()=>{s({...a,sessionId:a.sessionId,connectionId:a.connectionId,config:d}).catch(a=>{console.warn("[context-relay] Handoff generation failed:",a?.message||a)}).finally(()=>{A.delete(f)})}))}let E=new Map;function u(a,b,c){console.warn(`[universal-handoff] ${a} (combo=${b}): ${c}`)}async function v(a){try{return r(await a.clone().json())}catch{return await a.clone().text().catch(()=>"")}}async function w(a){let b=n(Array.isArray(a.messages)?a.messages:[],a.maxMessages,a.relayMode),c=m(b);if(!c)return u("unavailable",a.comboName,"empty selected-message history"),"unavailable";let d=B.replace("{HISTORY}",c),f=a.handoffModel||a.curr
+
+--- context-handoff @ 267632 ---
+a.messages)?a.messages:[],b.maxMessagesForSummary,b.relayMode),f=m(d);if(!f)return void u("unavailable",a.comboName,"empty selected-message history");let g=B.replace("{HISTORY}",f),h=await a.handleSingleModel({model:c,messages:[{role:"user",content:g}],stream:!1,max_tokens:800,temperature:.1,_omnirouteSkipContextRelay:!0,_omnirouteInternalRequest:"context-handoff"},c);if(!h.ok)return void u("unavailable",a.comboName,`summary model call failed: status=${h.status} model=${c}`);let i="";try{let a=await h.clone().json();i=r(a)}catch{try{i=await h.clone().text()}catch{i=""}}let j=p(i);j?(0,e.Wk)({sessionId:a.sessionId,comboName:a.comboName,fromAccount:a.connectionId,summary:j.summary,keyDecisions:j.keyDecisions,taskProgress:j.taskProgress,activeEntities:j.activeEntities,messageCount:Array.isArray(a.messages)?a.messages.length:0,model:c,warningThresholdPct:b.handoffThreshold,generatedAt:new Date().toISOString(),expiresAt:a.expiresAt||new Date(Date.now()+18e6).toISOString()}):u("unparseable",a.comboName,`model=${c} contentPreview=${JSON.stringify(i.slice(0,200))}`)}function t(a){var b,c;if(!a.sessionId||!a.connectionId)return;let d=k(a.config);if(0===d.handoffProviders.length||a.percentUs
+
+--- Trying model @ 73490 ---
+signal?.addEventListener("abort",()=>{clearTimeout(b),a(void 0)},{once:!0})}),H.signal?.aborted)return H.log.info("COMBO","Client disconnected during retry delay — aborting"),{ok:!1,response:(0,f.yj)(499,"Client disconnected")};let c=await (0,u.a5)(L,a=>(0,D.yn)(a,!0),P);if(c){H.log.info("COMBO",c),b>0&&d.fallbackCount++;break}}H.log.info("COMBO",`Trying model ${b+1}/${d.orderedTargets.length}: ${M}${a>0?` (retry ${a})`:""}`),(0,n.Ic)("combo.target.attempt",{comboName:H.combo.name,targetIndex:b,provider:O,model:M,timestamp:Date.now(),strategy:H.strategy}),d.comboAttemptOrder.push({provider:O??"unknown",model:M});let t={...H.body};if(!0===H.config.zeroLatencyOptimizationsEnabled&&b>0&&H.config.fallbackCompressionMode&&"off"!==H.config.fallbackCompressionMode){let{estimateTokens:a}=await Promise.resolve().then(c.bind(c,94164)),b=a(t);if(b>(H.config.fallbackCompressionThreshold??1e3)){let{applyCompression:a}=await c.e(72459).then(c.bind(c,972459)),d=a(t,H.config.fallbackCompressionMode,{model:M,bailout:{enabled:!0,minGainPercent:0}});d.compressed&&(H.log.info("COMBO",`Proactive fallback compression applied (${H.config.fallbackCompressionMode}): ${b} -> ${d.stats?.compressedTokens} tok
+
+===== /app/.build/next/server/app/api/usage/combo-trace/[id]/route.js =====
+No matching implementation clues found.
+
+===== /app/.build/next/server/app/api/combos/[id]/route.js =====
+No matching implementation clues found.
+[opc@litellm-gateway ~]$
+
+
