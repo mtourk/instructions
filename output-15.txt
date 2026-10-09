@@ -1,0 +1,258 @@
+
+[opc@litellm-gateway ~]$
+podman exec omniroute node -e '
+const fs = require("fs");
+const path = require("path");
+
+console.log("=== AUTH ENVIRONMENT ===");
+for (const k of ["REQUIRE_API_KEY","OMNIROUTE_API_KEY","INITIAL_PASSWORD","API_KEY"]) {
+  const v = process.env[k];
+  console.log(k + "=" + (v === undefined ? "NOT_SET" : k === "REQUIRE_API_KEY" ? v : "SET"));
+}
+
+console.log("\n=== AUTH / KEY ROUTE FILES ===");
+const root = "/app/.build/next/server/app/api";
+function walk(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const e of fs.readdirSync(dir, {withFileTypes:true})) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p);
+    else if (/route\.js$/.test(p) && /key|auth|feature.?flag/i.test(p)) {
+      console.log(p);
+    }
+  }
+}
+walk(root);
+
+console.log("\n=== AUTH IMPLEMENTATION CLUES ===");
+const roots = [
+  "/app/.build/next/server/app/api",
+  "/app/.build/next/server/chunks"
+];
+const patterns = [
+  "REQUIRE_API_KEY",
+  "isValidApiKey",
+  "generateApiKey",
+  "apiKeys",
+  "api_keys",
+  "Invalid API key",
+  "AUTH_002"
+];
+let count = 0;
+function scan(dir) {
+  if (!fs.existsSync(dir) || count >= 35) return;
+  for (const e of fs.readdirSync(dir, {withFileTypes:true})) {
+    const p = path.join(dir, e.name);
+'or (const r of roots) scan(r);h.max(0,i-220), Math.min(s.length,i+380)).replace(/\n/g," "));
+=== AUTH ENVIRONMENT ===
+REQUIRE_API_KEY=true
+OMNIROUTE_API_KEY=NOT_SET
+INITIAL_PASSWORD=NOT_SET
+API_KEY=NOT_SET
+
+=== AUTH / KEY ROUTE FILES ===
+/app/.build/next/server/app/api/auth/csrf/route.js
+/app/.build/next/server/app/api/auth/login/route.js
+/app/.build/next/server/app/api/auth/logout/route.js
+/app/.build/next/server/app/api/auth/oidc/callback/route.js
+/app/.build/next/server/app/api/auth/oidc/login/route.js
+/app/.build/next/server/app/api/auth/status/route.js
+/app/.build/next/server/app/api/cli-tools/keys/route.js
+/app/.build/next/server/app/api/cloud/auth/route.js
+/app/.build/next/server/app/api/keys/[id]/devices/route.js
+/app/.build/next/server/app/api/keys/[id]/regenerate/route.js
+/app/.build/next/server/app/api/keys/[id]/reveal/route.js
+/app/.build/next/server/app/api/keys/[id]/route.js
+/app/.build/next/server/app/api/keys/[id]/usage-limits/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/keys/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/permissions/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/route.js
+/app/.build/next/server/app/api/keys/groups/route.js
+/app/.build/next/server/app/api/keys/route.js
+/app/.build/next/server/app/api/oauth/[provider]/[action]/route.js
+/app/.build/next/server/app/api/oauth/[provider]/paste-credentials/route.js
+/app/.build/next/server/app/api/oauth/cliproxy-import/route.js
+/app/.build/next/server/app/api/oauth/codex/import/route.js
+/app/.build/next/server/app/api/oauth/codex/import-token/route.js
+/app/.build/next/server/app/api/oauth/cursor/auto-import/route.js
+/app/.build/next/server/app/api/oauth/cursor/import/route.js
+/app/.build/next/server/app/api/oauth/cursor/login/cancel/route.js
+/app/.build/next/server/app/api/oauth/cursor/login/poll/route.js
+/app/.build/next/server/app/api/oauth/cursor/login/start/route.js
+/app/.build/next/server/app/api/oauth/kiro/api-key/route.js
+/app/.build/next/server/app/api/oauth/kiro/auto-import/route.js
+/app/.build/next/server/app/api/oauth/kiro/import/route.js
+/app/.build/next/server/app/api/oauth/kiro/social-authorize/route.js
+/app/.build/next/server/app/api/oauth/kiro/social-exchange/route.js
+/app/.build/next/server/app/api/oauth/trae/authorize-state/route.js
+/app/.build/next/server/app/api/oauth/trae/import/route.js
+/app/.build/next/server/app/api/providers/[id]/claude-auth/apply-local/route.js
+/app/.build/next/server/app/api/providers/[id]/claude-auth/export/route.js
+/app/.build/next/server/app/api/providers/[id]/codex-auth/apply-local/route.js
+/app/.build/next/server/app/api/providers/[id]/codex-auth/export/route.js
+/app/.build/next/server/app/api/providers/agy-auth/apply-local/route.js
+/app/.build/next/server/app/api/providers/agy-auth/import/route.js
+/app/.build/next/server/app/api/providers/agy-auth/import-bulk/route.js
+/app/.build/next/server/app/api/providers/agy-auth/zip-extract/route.js
+/app/.build/next/server/app/api/providers/claude-auth/import/route.js
+/app/.build/next/server/app/api/providers/claude-auth/import-bulk/route.js
+/app/.build/next/server/app/api/providers/claude-auth/zip-extract/route.js
+/app/.build/next/server/app/api/providers/codex-auth/import/route.js
+/app/.build/next/server/app/api/providers/codex-auth/import-bulk/route.js
+/app/.build/next/server/app/api/providers/codex-auth/zip-extract/route.js
+/app/.build/next/server/app/api/providers/command-code/auth/apply/route.js
+/app/.build/next/server/app/api/providers/command-code/auth/callback/route.js
+/app/.build/next/server/app/api/providers/command-code/auth/start/route.js
+/app/.build/next/server/app/api/providers/command-code/auth/status/route.js
+/app/.build/next/server/app/api/quota/keys/[id]/models/route.js
+/app/.build/next/server/app/api/services/9router/rotate-key/route.js
+/app/.build/next/server/app/api/settings/authz-inventory/route.js
+/app/.build/next/server/app/api/settings/feature-flags/route.js
+/app/.build/next/server/app/api/usage/key-quota/route.js
+/app/.build/next/server/app/api/v1/registered-keys/[id]/revoke/route.js
+/app/.build/next/server/app/api/v1/registered-keys/[id]/route.js
+/app/.build/next/server/app/api/v1/registered-keys/route.js
+
+=== AUTH IMPLEMENTATION CLUES ===
+
+FILE: /app/.build/next/server/app/api/a2a/tasks/[id]/cancel/route.js
+MATCH: isValidApiKey
+")},342413:(a,b,c)=>{"use strict";c.a(a,async(a,d)=>{try{c.d(b,{k:()=>j});var e=c(584953),f=c(231537),g=c(844133),h=c(526408),i=a([e,f,h]);async function j(a){let b=(0,f.extractApiKey)(a);if((0,g.od)()){if(b&&await (0,f.isValidApiKey)(b))return{owner:await (0,h.M)(a)};let c=await (0,e.xg)(a,{invalidApiKeyStatus:401,alwaysRequireAuth:!0});return null===c?{owner:void 0}:c}let c=await (0,e.xg)(a,{invalidApiKeyStatus:401});return null===c?{owner:void 0}:b&&await (0,f.isValidApiKey)(b)?{owner:await (0,h.M)(a)}:c}[e,f,h]=i.then?(await i)():i,d()}catch(a){d(a)}})},353053:a=>{"use strict";a.exports=re
+
+FILE: /app/.build/next/server/app/api/a2a/tasks/[id]/route.js
+MATCH: isValidApiKey
+")},342413:(a,b,c)=>{"use strict";c.a(a,async(a,d)=>{try{c.d(b,{k:()=>j});var e=c(584953),f=c(231537),g=c(844133),h=c(526408),i=a([e,f,h]);async function j(a){let b=(0,f.extractApiKey)(a);if((0,g.od)()){if(b&&await (0,f.isValidApiKey)(b))return{owner:await (0,h.M)(a)};let c=await (0,e.xg)(a,{invalidApiKeyStatus:401,alwaysRequireAuth:!0});return null===c?{owner:void 0}:c}let c=await (0,e.xg)(a,{invalidApiKeyStatus:401});return null===c?{owner:void 0}:b&&await (0,f.isValidApiKey)(b)?{owner:await (0,h.M)(a)}:c}[e,f,h]=i.then?(await i)():i,d()}catch(a){d(a)}})},353053:a=>{"use strict";a.exports=re
+
+FILE: /app/.build/next/server/app/api/a2a/tasks/history/route.js
+MATCH: isValidApiKey
+")},342413:(a,b,c)=>{"use strict";c.a(a,async(a,d)=>{try{c.d(b,{k:()=>j});var e=c(584953),f=c(231537),g=c(844133),h=c(526408),i=a([e,f,h]);async function j(a){let b=(0,f.extractApiKey)(a);if((0,g.od)()){if(b&&await (0,f.isValidApiKey)(b))return{owner:await (0,h.M)(a)};let c=await (0,e.xg)(a,{invalidApiKeyStatus:401,alwaysRequireAuth:!0});return null===c?{owner:void 0}:c}let c=await (0,e.xg)(a,{invalidApiKeyStatus:401});return null===c?{owner:void 0}:b&&await (0,f.isValidApiKey)(b)?{owner:await (0,h.M)(a)}:c}[e,f,h]=i.then?(await i)():i,d()}catch(a){d(a)}})},353053:a=>{"use strict";a.exports=re
+
+FILE: /app/.build/next/server/app/api/a2a/tasks/route.js
+MATCH: isValidApiKey
+")},342413:(a,b,c)=>{"use strict";c.a(a,async(a,d)=>{try{c.d(b,{k:()=>j});var e=c(584953),f=c(231537),g=c(844133),h=c(526408),i=a([e,f,h]);async function j(a){let b=(0,f.extractApiKey)(a);if((0,g.od)()){if(b&&await (0,f.isValidApiKey)(b))return{owner:await (0,h.M)(a)};let c=await (0,e.xg)(a,{invalidApiKeyStatus:401,alwaysRequireAuth:!0});return null===c?{owner:void 0}:c}let c=await (0,e.xg)(a,{invalidApiKeyStatus:401});return null===c?{owner:void 0}:b&&await (0,f.isValidApiKey)(b)?{owner:await (0,h.M)(a)}:c}[e,f,h]=i.then?(await i)():i,d()}catch(a){d(a)}})},353053:a=>{"use strict";a.exports=re
+
+FILE: /app/.build/next/server/app/api/admin/concurrency/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/admin/proxy-pool-visibility/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/agent-skills/[id]/raw/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/agent-skills/[id]/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/agent-skills/coverage/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/agent-skills/generate/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/agent-skills/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/analytics/auto-routing/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/analytics/diversity/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/assess/route.js
+MATCH: Invalid API key
+:"server_error",code:"internal_server_error"},502:{type:"server_error",code:"bad_gateway"},503:{type:"server_error",code:"service_unavailable"},504:{type:"server_error",code:"gateway_timeout"}},e={400:"Bad request",401:"Invalid API key provided",402:"Payment required",403:"Permission denied",404:"Model not found",406:"Model not supported",410:"Model has been shut down",429:"Rate limit exceeded",499:"Client disconnected",500:"Internal server error",502:"Bad gateway - upstream provider error",503:"Service temporarily unavailable",504:"Gateway timeout"},f={base:1e3,max:12e4,maxLevel:15},g=5e3,h={
+
+FILE: /app/.build/next/server/app/api/auth/csrf/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/auth/logout/route.js
+MATCH: api_keys
+now()})}function j(a){if(!a)return!1;if(e.has(a))return!0;let b=function(a){let b=function(){try{return(0,d.getDbInstance)()}catch{return null}}();if(!b||!a||!function(a){if(g)return h;try{h=a.prepare("PRAGMA table_info(api_keys)").all().some(a=>"no_log"===a.name)}catch{h=!1}return g=!0,h}(b))return!1;let c=f.get(a);if(c&&Date.now()-c.timestamp<3e4)return c.value;try{let c=b.prepare("SELECT no_log FROM api_keys WHERE id = ?").get(a),d=!!(c&&1===Number(c.no_log));return f.set(a,{value:d,timestamp:Date.now()}),d}catch{return!1}}(a);return b&&e.add(a),b}},840610:a=>{"use strict";a.exports=require
+
+FILE: /app/.build/next/server/app/api/batches/[id]/route.js
+MATCH: Invalid API key
+KeyId?a.apiKeyId:b?.id?b.id:a.isSessionAuth?null:k.c}function q(a){return e.NextResponse.json((0,j.buildErrorBody)(401,a),{status:401,headers:i.$})}function r(a){return a.apiKey&&!a.apiKeyId?{mode:"rejected",response:q("Invalid API key")}:a.apiKeyId&&(0,l.hasManageScope)(a.apiKeyMetadata?.scopes??[])?{mode:"instance"}:a.apiKeyId?{mode:"api_key",apiKeyId:a.apiKeyId}:a.isSessionAuth?{mode:"instance"}:{mode:"rejected",response:q("Authentication required")}}[f,g,h]=m.then?(await m)():m,d()}catch(a){d(a)}})},257975:a=>{"use strict";a.exports=require("node:util")},274552:a=>{"use strict";a.exports=r
+
+FILE: /app/.build/next/server/app/api/batches/route.js
+MATCH: Invalid API key
+KeyId?a.apiKeyId:b?.id?b.id:a.isSessionAuth?null:k.c}function q(a){return e.NextResponse.json((0,j.buildErrorBody)(401,a),{status:401,headers:i.$})}function r(a){return a.apiKey&&!a.apiKeyId?{mode:"rejected",response:q("Invalid API key")}:a.apiKeyId&&(0,l.hasManageScope)(a.apiKeyMetadata?.scopes??[])?{mode:"instance"}:a.apiKeyId?{mode:"api_key",apiKeyId:a.apiKeyId}:a.isSessionAuth?{mode:"instance"}:{mode:"rejected",response:q("Authentication required")}}[f,g,h]=m.then?(await m)():m,d()}catch(a){d(a)}})},257975:a=>{"use strict";a.exports=require("node:util")},274552:a=>{"use strict";a.exports=r
+
+FILE: /app/.build/next/server/app/api/chaos/config/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/chaos/run/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli/tokens/[id]/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli/tokens/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli/whoami/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/antigravity-mitm/alias/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/antigravity-mitm/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/backups/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/claude-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/cline-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/codewhale-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/codex-profiles/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/codex-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/crush-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/deepseek-tui-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/detect/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+
+FILE: /app/.build/next/server/app/api/cli-tools/droid-settings/route.js
+MATCH: isValidApiKey
+"insufficient":return(0,f.W)({status:403,message:`Access token scope '${c.have}' is insufficient; '${c.need}' required.`,type:"invalid_request"})}let d=(0,g.extractApiKey)(a,{allowUrl:!1});if(d){let a;try{if(!await (0,g.isValidApiKey)(d)){let a;return a=b.invalidApiKeyStatus??403,(0,f.W)({status:a,message:401===a?"Invalid API key":"Invalid management token",type:"invalid_request"})}a=await (0,h.getApiKeyMetadata)(d)}catch{return(0,f.W)({status:503,message:"Service temporarily unavailable",type:"server_error"})}return a&&(b.acceptMcpConnectScope?(0,m.hasMcpConnectOrManageScope)(a.scopes):functi
+[opc@litellm-gateway ~]$
+
