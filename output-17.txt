@@ -1,0 +1,371 @@
+way ~]$
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+curl -sS --max-time 90 \
+  -X POST http://127.0.0.1:20128/api/v1/chat/completions \
+  -H "Authorization: Bearer ${OMNI_KEY}" \
+  -H "Content-Type: application/json" \
+  -H "x-session-id: OR-CTX-001-20261009-A" \
+  -H "x-omniroute-connection: ae9ef7ed-fd4b-4773-bb14-8b67d889ac79" \
+  -d '{
+    "model": "context-relay-gemini-test",
+    "messages": [
+      {
+        "role": "user",
+        "content": "From the earlier turn in this same session, return the exact codeword and backup region in this format: CODEWORD=<value>; REGION=<value>. If unavailable, reply UNKNOWN."
+      }
+    ],
+    "max_tokens": 128,
+    "stream": false
+  }' \
+  -w '\nHTTP_STATUS:%{http_code}\n'
+{"id":"chatcmpl-3TfJasCUAumH28oPvLehoA0","object":"chat.completion","created":1791571935,"model":"gemini-3.1-flash-lite","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"UNKNOWN","reasoning_content":"Okay, here's my assessment of the situation, tailored as requested:\n\n**My Internal Processing: Decoding the Information Request**\n\nAlright, let's break this down. The user, as usual, is being precise. They're asking for two specific pieces of data: a \"codeword\" and a \"backup region.\" The crucial point is that they're requesting this information from an *earlier* exchange in *this same session*. That tells me I need to go digging through the conversation history. Furthermore, the user expects a very structured response:  `CODEWORD=<value>; REGION=<value>`. And a vital contingency here: if I *can't* find the requested data, I must respond with the dreaded \"UNKNOWN\". No ambiguity, no hedging – just a clean \"UNKNOWN.\" So, it's retrieval or reporting failure.\n\nI understand I'm an AI model and that's my current state. Now, I need to check the session history to fulfil this request.\n\n\n"}}],"usage":{"prompt_tokens":38,"completion_tokens":108,"total_tokens":146,"completion_tokens_details":{"reasoning_tokens":107}}}
+HTTP_STATUS:200
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+cat > /tmp/omniroute-diagnose.sh <<'SCRIPT'
+#!/usr/bin/env bash
+set +e
+
+OUT="/tmp/omniroute-context-relay-report.txt"
+COMBO_ID="d5a0e969-06d4-4f45-8140-059e827e13b5"
+
+{
+  echo "===== 1. TIME / CONTAINER ====="
+  date -Is
+  podman ps --format '{{.Names}} {{.Status}}' | grep -i omniroute
+  echo
+
+  echo "===== 2. COMBO CONFIG FROM API ====="
+  if [ -f /tmp/omniroute-cookie.txt ]; then
+    curl -sS --max-time 10 \
+      -b /tmp/omniroute-cookie.txt \
+      "http://127.0.0.1:20128/api/combos/$COMBO_ID" \
+      | sed -E 's/(sk-[A-Za-z0-9_-]{10,})/[REDACTED]/g'
+  else
+    echo "Cookie file missing on host"
+  fi
+  echo
+
+  echo "===== 3. RECENT RELEVANT LOGS ====="
+  podman logs --since 2h omniroute 2>&1 \
+    | grep -Ei 'context-relay-gemini-test|OR-CTX-001|context-handoff|handoff|Using gemini account|Trying model|fallback|affinity|combo trace|relay' \
+    | tail -n 220 \
+    | sed -E 's/(Bearer )[A-Za-z0-9._-]+/\1[REDACTED]/g; s/(sk-[A-Za-z0-9_-]{10,})/[REDACTED]/g'
+  echo
+
+  echo "===== 4. RELEVANT API ROUTES ====="
+  podman exec omniroute node -e '
+  const fs=require("fs"), path=require("path");
+  const root="/app/.build/next/server/app/api";
+  function walk(d) {
+    if(!fs.existsSync(d)) return;
+    for(const e of fs.readdirSync(d,{withFileTypes:true})) {
+      const p=path.join(d,e.name);
+      if(e.isDirectory()) walk(p);
+      else if(/route\.js$/.test(p) && /combo|key|connection|config|session/i.test(p))
+        console.log(p);
+    }
+  }
+  walk(root);
+  '
+  echo
+
+  echo "===== 5. CONTEXT RELAY CODE CLUES ====="
+  podman exec omniroute node -e '
+  const fs=require("fs"), path=require("path");
+  const roots=["/app/.build/next/server/chunks","/app/.build/next/server/app/api"];
+  const terms=[
+    "context-handoff","context-relay","handoffProviders",
+    "maxMessagesForSummary","_omnirouteSkipContextRelay",
+    "sessionId","preserveSystemPrompt","trigger"
+  ];
+  let printed=0;
+  function walk(d) {
+    if(!fs.existsSync(d)||printed>=45) return;
+    for(const e of fs.readdirSync(d,{withFileTypes:true})) {
+      const p=path.join(d,e.name);
+      if(e.isDirectory()){walk(p);continue;}
+      if(!/\.js$/.test(p)) continue;
+      let s; try{s=fs.readFileSync(p,"utf8")}catch{continue}
+      const hits=terms.filter(t=>s.includes(t));
+      if(!hits.length) continue;
+      console.log("\nFILE "+p+" TERMS "+hits.join(","));
+      for(const term of hits.slice(0,3)) {
+bash /tmp/omniroute-diagnose.sh$OUT")"==undefined?"NOT_SET":k==="REQUIRE_API_KEY"||k==="NODE_ENV"?process.env[k]:"SET"));
+Report written to /tmp/omniroute-context-relay-report.txt
+Report lines: 944
+First 260 lines:
+===== 1. TIME / CONTAINER =====
+2026-10-09T18:54:54+00:00
+omniroute Up 33 hours
+
+===== 2. COMBO CONFIG FROM API =====
+{"name":"context-relay-gemini-test","models":[{"id":"context-relay-gemini-test-model-1-gemini-3-1-flash-lite-2c27504c-e8e6-4188-b7f1-3950acb5e88c","kind":"model","model":"gemini-3.1-flash-lite","connectionId":"2c27504c-e8e6-4189-b7f1-3950acb5e88c","weight":0},{"id":"context-relay-gemini-test-model-2-gemini-3-1-flash-lite-ae9ef7ed-fd4b-4773-bb14-8b67d889ac79","kind":"model","model":"gemini-3.1-flash-lite","connectionId":"ae9ef7ed-fd4b-4773-bb14-8b67d889ac79","weight":0}],"strategy":"context-relay","id":"d5a0e969-06d4-4f45-8140-059e827e13b5","config":{},"isHidden":false,"sortOrder":1,"createdAt":"2026-10-08T10:29:59.216Z","updatedAt":"2026-10-09T17:48:13.371Z","version":2,"repairNote":"[db-health:2026-10-08T16:03:21.506Z] 1 missing connection pin(s) cleared."}
+===== 3. RECENT RELEVANT LOGS =====
+{"level":30,"time":"2026-10-09T18:48:25.893Z","service":"omniroute","module":"sse","tag":"HTTP","method":"POST","path":"/api/v1/chat/completions | context-relay-gemini-test | 1 msgs","msg":"📥 POST /api/v1/chat/completions | context-relay-gemini-test | 1 msgs"}
+{"level":30,"time":"2026-10-09T18:48:25.905Z","service":"omniroute","module":"sse","tag":"CHAT","msg":"Combo \"context-relay-gemini-test\" [context-relay] with 2 models"}
+{"level":30,"time":"2026-10-09T18:48:25.911Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"context-relay with nested resolution: 2 total targets"}
+{"level":30,"time":"2026-10-09T18:48:25.926Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"session_key=header:OR-CTX-001-... has no available affinity target"}
+{"level":30,"time":"2026-10-09T18:48:25.926Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Trying model 1/2: gemini-3.1-flash-lite"}
+{"level":30,"time":"2026-10-09T18:48:25.932Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"Using gemini account: ***..."}
+{"level":30,"time":"2026-10-09T18:48:25.946Z","service":"omniroute","module":"sse","tag":"CONTEXT","msg":"Attempting to resolve combo limits for comboName=context-relay-gemini-test"}
+{"level":30,"time":"2026-10-09T18:48:53.665Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Model gemini-3.1-flash-lite succeeded (27743ms, 0 fallbacks)"}
+{"level":30,"time":"2026-10-09T18:48:53.668Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"combo trace combo-4327fc74-b01b-4d69-98ca-8b697fd2d35b terminal={\"status\":200,\"errorClass\":null} decisions=2"}
+{"level":30,"time":"2026-10-09T18:50:26.197Z","service":"omniroute","module":"sse","tag":"HTTP","method":"POST","path":"/api/v1/chat/completions | context-relay-gemini-test | 1 msgs","msg":"📥 POST /api/v1/chat/completions | context-relay-gemini-test | 1 msgs"}
+{"level":30,"time":"2026-10-09T18:50:26.200Z","service":"omniroute","module":"sse","tag":"CHAT","msg":"Combo \"context-relay-gemini-test\" [context-relay] with 2 models"}
+{"level":30,"time":"2026-10-09T18:50:26.202Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"context-relay with nested resolution: 2 total targets"}
+{"level":30,"time":"2026-10-09T18:50:26.208Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"session_key=header:OR-CTX-001-... has no available affinity target"}
+{"level":30,"time":"2026-10-09T18:50:26.208Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Trying model 1/2: gemini-3.1-flash-lite"}
+{"level":30,"time":"2026-10-09T18:50:26.212Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"Using gemini account: ***..."}
+{"level":30,"time":"2026-10-09T18:50:26.216Z","service":"omniroute","module":"sse","tag":"CONTEXT","msg":"Attempting to resolve combo limits for comboName=context-relay-gemini-test"}
+{"level":30,"time":"2026-10-09T18:50:31.895Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Model gemini-3.1-flash-lite succeeded (5691ms, 0 fallbacks)"}
+{"level":30,"time":"2026-10-09T18:50:31.895Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"combo trace combo-d4d6032f-ed84-4c7d-b21e-e83474c5eeb6 terminal={\"status\":200,\"errorClass\":null} decisions=2"}
+{"level":30,"time":"2026-10-09T18:52:12.797Z","service":"omniroute","module":"sse","tag":"HTTP","method":"POST","path":"/api/v1/chat/completions | context-relay-gemini-test | 1 msgs","msg":"📥 POST /api/v1/chat/completions | context-relay-gemini-test | 1 msgs"}
+{"level":30,"time":"2026-10-09T18:52:12.800Z","service":"omniroute","module":"sse","tag":"CHAT","msg":"Combo \"context-relay-gemini-test\" [context-relay] with 2 models"}
+{"level":30,"time":"2026-10-09T18:52:12.802Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"context-relay with nested resolution: 2 total targets"}
+{"level":30,"time":"2026-10-09T18:52:12.807Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"session_key=header:OR-CTX-001-... has no available affinity target"}
+{"level":30,"time":"2026-10-09T18:52:12.808Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Trying model 1/2: gemini-3.1-flash-lite"}
+{"level":30,"time":"2026-10-09T18:52:12.811Z","service":"omniroute","module":"sse","tag":"AUTH","msg":"Using gemini account: ***..."}
+{"level":30,"time":"2026-10-09T18:52:12.815Z","service":"omniroute","module":"sse","tag":"CONTEXT","msg":"Attempting to resolve combo limits for comboName=context-relay-gemini-test"}
+{"level":30,"time":"2026-10-09T18:52:15.124Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"Model gemini-3.1-flash-lite succeeded (2321ms, 0 fallbacks)"}
+{"level":30,"time":"2026-10-09T18:52:15.124Z","service":"omniroute","module":"sse","tag":"COMBO","msg":"combo trace combo-c97de26f-38bc-41f1-ad4c-72d8cbf7b892 terminal={\"status\":200,\"errorClass\":null} decisions=2"}
+
+===== 4. RELEVANT API ROUTES =====
+/app/.build/next/server/app/api/chaos/config/route.js
+/app/.build/next/server/app/api/cli-tools/config/route.js
+/app/.build/next/server/app/api/cli-tools/keys/route.js
+/app/.build/next/server/app/api/combos/[id]/route.js
+/app/.build/next/server/app/api/combos/auto/route.js
+/app/.build/next/server/app/api/combos/builder/options/route.js
+/app/.build/next/server/app/api/combos/duplicate/route.js
+/app/.build/next/server/app/api/combos/metrics/route.js
+/app/.build/next/server/app/api/combos/reorder/route.js
+/app/.build/next/server/app/api/combos/route.js
+/app/.build/next/server/app/api/combos/test/route.js
+/app/.build/next/server/app/api/context/caveman/config/route.js
+/app/.build/next/server/app/api/context/combos/[id]/assignments/route.js
+/app/.build/next/server/app/api/context/combos/[id]/route.js
+/app/.build/next/server/app/api/context/combos/default/route.js
+/app/.build/next/server/app/api/context/combos/route.js
+/app/.build/next/server/app/api/context/rtk/config/route.js
+/app/.build/next/server/app/api/keys/[id]/devices/route.js
+/app/.build/next/server/app/api/keys/[id]/regenerate/route.js
+/app/.build/next/server/app/api/keys/[id]/reveal/route.js
+/app/.build/next/server/app/api/keys/[id]/route.js
+/app/.build/next/server/app/api/keys/[id]/usage-limits/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/keys/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/permissions/route.js
+/app/.build/next/server/app/api/keys/groups/[id]/route.js
+/app/.build/next/server/app/api/keys/groups/route.js
+/app/.build/next/server/app/api/keys/route.js
+/app/.build/next/server/app/api/model-combo-mappings/[id]/route.js
+/app/.build/next/server/app/api/model-combo-mappings/route.js
+/app/.build/next/server/app/api/oauth/kiro/api-key/route.js
+/app/.build/next/server/app/api/plugins/[name]/config/route.js
+/app/.build/next/server/app/api/providers/bulk-web-session/route.js
+/app/.build/next/server/app/api/providers/volcengine-plan/connect/[sessionId]/cancel/route.js
+/app/.build/next/server/app/api/providers/volcengine-plan/connect/[sessionId]/code/route.js
+/app/.build/next/server/app/api/providers/volcengine-plan/connect/[sessionId]/identity/route.js
+/app/.build/next/server/app/api/providers/volcengine-plan/connect/[sessionId]/resend/route.js
+/app/.build/next/server/app/api/providers/volcengine-plan/connect/[sessionId]/status/route.js
+/app/.build/next/server/app/api/providers/web-session-contract/route.js
+/app/.build/next/server/app/api/quota/keys/[id]/models/route.js
+/app/.build/next/server/app/api/quota/plans/[connectionId]/route.js
+/app/.build/next/server/app/api/resilience/connections/route.js
+/app/.build/next/server/app/api/services/9router/rotate-key/route.js
+/app/.build/next/server/app/api/session-pools/[provider]/route.js
+/app/.build/next/server/app/api/session-pools/route.js
+/app/.build/next/server/app/api/sessions/route.js
+/app/.build/next/server/app/api/settings/cache-config/embedding-options/route.js
+/app/.build/next/server/app/api/settings/cache-config/route.js
+/app/.build/next/server/app/api/settings/cache-config/test-embedding/route.js
+/app/.build/next/server/app/api/settings/combo-defaults/route.js
+/app/.build/next/server/app/api/settings/tier-config/route.js
+/app/.build/next/server/app/api/tools/agent-bridge/config/route.js
+/app/.build/next/server/app/api/tools/traffic-inspector/sessions/[id]/export.har/route.js
+/app/.build/next/server/app/api/tools/traffic-inspector/sessions/[id]/requests/route.js
+/app/.build/next/server/app/api/tools/traffic-inspector/sessions/[id]/route.js
+/app/.build/next/server/app/api/tools/traffic-inspector/sessions/route.js
+/app/.build/next/server/app/api/usage/[connectionId]/route.js
+/app/.build/next/server/app/api/usage/combo-forecast/route.js
+/app/.build/next/server/app/api/usage/combo-health/route.js
+/app/.build/next/server/app/api/usage/combo-health-autopilot/route.js
+/app/.build/next/server/app/api/usage/combo-health-dashboard/route.js
+/app/.build/next/server/app/api/usage/combo-scoring-inspector/route.js
+/app/.build/next/server/app/api/usage/combo-trace/[id]/route.js
+/app/.build/next/server/app/api/usage/key-quota/route.js
+/app/.build/next/server/app/api/v1/auto-combo/[channel]/candidates/route.js
+/app/.build/next/server/app/api/v1/combos/route.js
+/app/.build/next/server/app/api/v1/registered-keys/[id]/revoke/route.js
+/app/.build/next/server/app/api/v1/registered-keys/[id]/route.js
+/app/.build/next/server/app/api/v1/registered-keys/route.js
+/app/.build/next/server/app/api/v1/session-leases/route.js
+/app/.build/next/server/app/api/v1/vscode/[token]/combos/route.js
+/app/.build/next/server/app/api/v1/vscode/combos/[token]/[[...slug]]/route.js
+/app/.build/next/server/app/api/v1/vscode/raw/[token]/combos/route.js
+/app/.build/next/server/app/api/vnc-session/[...params]/route.js
+/app/.build/next/server/app/api/vnc-session/route.js
+
+===== 5. CONTEXT RELAY CODE CLUES =====
+
+FILE /app/.build/next/server/chunks/1012.js TERMS sessionId,trigger
+TERM sessionId: ^1\d{10}$/.test(e)?e:null);if(!f)return{ok:!1,error:"Invalid phone number (expected an 11-digit CN mobile number)"};for(let a of(this.expireSessions(),this.sessions.values()))a.phone!==f||C(a.phase)||await this.cancel(a.sessionId);if(this.getActiveSessionCount()>=2)return{ok:!1,error:"Too many concurrent Volcano login sessions"};try{c=await this.loadPlaywright()}catch{return{ok:!1,error:"Playwright is not installed. Use manual browser login instead."}}let i={sessionId:(0,d.randomUUID)(),phone:f,phase:"starting",error:null,captchaImage:null,resendAvailableAt:0,createdAt:Date.now(),updatedAt:Date.now(),timeoutMs:b?.timeout||3e5,creden
+TERM trigger: .delays.resendCooldownMs,await z(this.delays.sendCodeSettleMs),await this.firstVisible(i.page,n))return i.captchaImage=await this.shot(i.page),i.phase="fallback_manual",i.error="Volcano risk control (slider captcha) was triggered in headless mode. Use manual browser login.",await this.closeBrowser(i),{ok:!0,session:this.toView(i)};return await this.firstVisible(i.page,l)?(i.captchaImage=await this.shot(i.page),i.phase="captcha_required"):i.phase="waiting_code",{ok:!0,session:this.toView(i)}}catch(a){return await this.closeBrowser(i),i.phase=a instanceof B?"fallback_manual":"error",i.error=D(a),"fallback_manual"===i.phase&&(i.error=`
+
+FILE /app/.build/next/server/chunks/10293.js TERMS trigger
+TERM trigger: nd %s is moved to %s",a.name,c),g=Number(b),j.slots[b]?j.slots[b][0]=c:j.slots[b]=[c],j._groupsBySlot[b]=j._groupsIds[j.slots[b].join(";")],j.connectionPool.findOrCreate(j.natMapper(c)),k(),w("refreshing slot caches... (triggered by MOVED error)"),j.refreshSlotsCache()},ask:function(b,c){w("command %s is required to ask %s:%s",a.name,c);let d=j.natMapper(c);j.connectionPool.findOrCreate(d),k(!1,`${d.host}:${d.port}`)},tryagain:d,clusterDown:d,connectionClosed:d,maxRedirections:function(c){b.call(a,c)},defaults:function(){b.call(a,c)}})}}function k(d,i){let k;if("end"===j.status)return void a.reject(new f.AbortError("Cluster is ended
+
+FILE /app/.build/next/server/chunks/10387.js TERMS trigger
+TERM trigger: _doExpirePatched){c._doExpirePatched=!0;let a=c.doExpire.bind(c),b=c.options.id;c.doExpire=function(d,e,f){let g=c._states;return"RUNNING"===g?.jobStatus?.(b)&&(g?.next?.(b),console.warn(`[bottleneck-patch] doExpire bug triggered: job ${b} stuck in RUNNING, advanced to EXECUTING before expiry. This is the Bottleneck v2.19.5 capacity leak.`)),a(d,e,f)}}return b.call(this,a,c,d)},console.log("[bottleneck-patch] Applied doExpire fix for Bottleneck v2.19.5"))}}};
+
+FILE /app/.build/next/server/chunks/10523.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ිත කරන්න.","avoid":"මාදිලි 2ක් හෝ ඊට අඩු කුඩා සංයෝජන සඳහා භාවිත නොකරන්න — round-robin ක්රමයට වඩා ප්රතිලාභයක් නැත.","example":"උදාහරණය: සමාන මාදිලි අන්ත ලක්ෂ්ය 4+ක් හරහා ඉහළ ක්රියා ධාරිතාවකින් අනුමාන ක්රියාත්මක කිරීම."},"context-relay":{"when":"ක්රියාකාරී සන්දර්භය අහිමි නොකර ගිණුම් මාරු කිරීමෙන් පසුවත් දිගු සැසි පවත්වාගත යුතු විට භාවිත කරන්න.","avoid":"ගිණුම් මාරු කිරීම දුර්ලභ විට හෝ අමතර සාරාංශකරණ ඉල්ලීම් ඔබට අවශ්ය නොවන විට භාවිත නොකරන්න.","example":"උදාහරණය: කෝටාව අවසන් වීමට ආසන්න වූ විට ගිණුම් කිහිපයක් අතර මාරු වන Codex සැසි."},"fill-first":{"when":"ඊළඟ සැපයුම්කරු වෙත යාමට පෙර එක් සැපයුම්කරුවෙකුගේ කෝටාව සම්පූර්ණයෙන්ම අවසන් කිරීමට
+TERM preserveSystemPrompt: සම්පීඩන අනුපාතය"},"modelPath":{"label":"ආකෘති මාර්ගය"},"minRows":{"label":"සංක්ෂිප්ත කිරීමට අවශ්ය අවම පේළි ගණන","description":"වගුමය සංක්ෂිප්තකරණය ක්රියාත්මක කිරීමට අවශ්ය සමජාතීය JSON අරාවක අවම පේළි ගණන. පෙරනිමිය: 8."},"preserveSystemPrompt":{"label":"පද්ධති ප්රේරකය සංරක්ෂණය කරන්න"},"summarizerEnabled":{"label":"සාරාංශකාරකය සබල කරන්න"},"maxTokensPerMessage":{"label":"පණිවිඩයකට උපරිම ටෝකන ගණන"},"minSavingsThreshold":{"label":"අවම ඉතිරිකිරීමේ සීමාව"},"minScoreThreshold":{"label":"අවම ලකුණු සීමාව"},"slmFallbackToAggressive":{"label":"Aggressive වෙත පසුබසින්න"},"intensity":{"label":"තීව්රතාව"},"minMessageLength":{"label":"අවම පණිවිඩ දිග
+TERM trigger: ්රියාවලි ආරම්භ කළ හැකි මාර්ග ඉලක්ක කරන අතර ඒවා මඟහැරිය නොහැක.","GENERIC":"Authz සැකසුම් යාවත්කාලීන කිරීමට අසමත් විය."},"remove":"ඉවත් කරන්න"},"resilienceBaseCooldownLabel":"මූලික සිසිල්වීමේ කාලය","scopeLabel":"විෂයපථය","triggerLabel":"ප්රේරකය","effectLabel":"බලපෑම","statusEnabled":"සක්රීයයි","statusDisabled":"අක්රීයයි","resilienceRequestQueueScope":"එක් එක් ඉල්ලීම් පෝලිම සඳහා","resilienceRequestQueueTrigger":"upstream වෙත යැවීමට පෙර","resilienceRequestQueueEffect":"ඉල්ලීම් පෝලිම්ගත කරයි, සමගාමීත්වය සීමා කරයි, සහ ඇමතුම් අතර පරතරයක් තබයි","resilienceRequestQueueDesc":"මෙම ස්තරය පාලනය කරන්නේ පෝලිම්ගත කිරීම සහ වේග-පාලනය පමණි. එය සිසිල්ව
+
+FILE /app/.build/next/server/chunks/1083.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ":"Ev\xedtalo para combinaciones peque\xf1as con 2 modelos o menos: no ofrece ninguna ventaja frente a round-robin.","example":"Ejemplo: inferencia de alto rendimiento en 4 o m\xe1s endpoints de modelos equivalentes."},"context-relay":{"when":"\xdasalo cuando las sesiones largas deban mantenerse durante la rotaci\xf3n de cuentas sin perder el contexto de trabajo.","avoid":"Ev\xedtalo cuando el cambio de cuenta sea poco frecuente o cuando no quieras solicitudes de resumen adicionales.","example":"Ejemplo: sesiones de Codex que rotan entre varias cuentas cuando est\xe1n cerca de agotar la cuota."},"fill-first":{"when":"\xdaselo cuando
+TERM preserveSystemPrompt: el modelo"},"minRows":{"label":"Filas m\xednimas para compactar","description":"N\xfamero m\xednimo de filas de una matriz JSON homog\xe9nea necesario para activar la compactaci\xf3n tabular. Valor predeterminado: 8."},"preserveSystemPrompt":{"label":"Conservar el prompt del sistema"},"summarizerEnabled":{"label":"Activar el generador de res\xfamenes"},"maxTokensPerMessage":{"label":"Tokens m\xe1ximos por mensaje"},"minSavingsThreshold":{"label":"Umbral m\xednimo de ahorro"},"minScoreThreshold":{"label":"Umbral m\xednimo de puntuaci\xf3n"},"slmFallbackToAggressive":{"label":"Usar Agresivo como alternativa"},"intensity":{"label":"Int
+TERM trigger:  de iniciar procesos y no se pueden omitir.","GENERIC":"No se pudo actualizar la configuraci\xf3n de autorizaci\xf3n."},"remove":"Eliminar"},"resilienceBaseCooldownLabel":"Enfriamiento b\xe1sico","scopeLabel":"Alcance","triggerLabel":"gatillo","effectLabel":"Efecto","statusEnabled":"Habilitado","statusDisabled":"Deshabilitado","resilienceRequestQueueScope":"Por cola de solicitudes","resilienceRequestQueueTrigger":"Antes de enviar al upstream","resilienceRequestQueueEffect":"Pone en cola las solicitudes, limita la simultaneidad y espacia las llamadas","resilienceRequestQueueDesc":"Esta capa solo controla las colas y el ritmo. No alma
+
+FILE /app/.build/next/server/chunks/1155.js TERMS trigger
+TERM trigger: ","ҳә",[231,182],"icar","appro","Vo"," taste","Pad","(\r\n"," 国产","sign"," decisions"," пот"," 한","स्त","otic","'il","(y"," squ","txt"," ui","esti","005"," lect",".Image","_pos","ikel"," బ","NO"," فر"," fois","\xe4tt"," trigger","აში"," Saf"," bisa","trl","RESS"," watching"," լ","estic","ाच","ivi","bag","Mult","ễ"," complic","osto",".Object"," answers"," Week"," Client","க்க"," Try","Scene","ף","活","<>();\n"," tempor"," های"," krij"," ana"," LED","copy","被"," meta","ện"," 彩票","orde"," profes","\xb4","]->","low"," আম","185"," loading"," ef"," gun",[232,149]," Union","hab","лав","POSE","Review"," nun","\x3c!--"," Rec","203","Comments"
+
+FILE /app/.build/next/server/chunks/11584.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: .","avoid":"Не використовуйте для невеликих комбінацій із 2 моделями або менше — це не має переваг над циклічним розподілом.","example":"Приклад: високопродуктивний інференс на 4+ рівноцінних кінцевих точках моделей."},"context-relay":{"when":"Використовуйте, коли тривалі сеанси мають витримувати ротацію облікових записів без втрати робочого контексту.","avoid":"Не використовуйте, якщо перемикання облікових записів відбувається рідко або якщо ви не хочете надсилати додаткові запити на узагальнення.","example":"Приклад: сеанси Codex, які перемикаються між кількома обліковими записами, коли квота майже вичерпана."},"fill-first":{"when
+TERM preserveSystemPrompt: ях до моделі"},"minRows":{"label":"Мінімальна кількість рядків для компактності","description":"Мінімальна кількість рядків в однорідному масиві JSON, необхідна для запуску табличного ущільнення. За замовчуванням: 8."},"preserveSystemPrompt":{"label":"Зберігати системний промпт"},"summarizerEnabled":{"label":"Увімкнути резюмувальник"},"maxTokensPerMessage":{"label":"Максимальна кількість токенів на повідомлення"},"minSavingsThreshold":{"label":"Мінімальний поріг економії"},"minScoreThreshold":{"label":"Мінімальний поріг оцінки"},"slmFallbackToAggressive":{"label":"Повернутися до Aggressive"},"intensity":{"label":"Інтенсивність"},"mi
+TERM trigger: з можливістю spawn і не можуть бути обхідними.","GENERIC":"Не вдалося оновити налаштування авторизації."},"remove":"Видалити"},"resilienceBaseCooldownLabel":"Базовий час відновлення","scopeLabel":"Область застосування","triggerLabel":"Тригер","effectLabel":"Ефект","statusEnabled":"Увімкнено","statusDisabled":"Вимкнено","resilienceRequestQueueScope":"За чергою запитів","resilienceRequestQueueTrigger":"Перед відправленням наверх","resilienceRequestQueueEffect":"Ставить запити в чергу, обмежує паралельність і розподіляє виклики","resilienceRequestQueueDesc":"Цей рівень контролює лише чергування та темп. Він не зберігає перезарядки або
+
+FILE /app/.build/next/server/chunks/11623.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay:  Power-of-Two-Choices.","avoid":"Evita para combos pequenos com 2 ou menos modelos — sem benef\xedcio face ao round-robin.","example":"Exemplo: infer\xeancia de alto rendimento em 4+ endpoints de modelo equivalentes."},"context-relay":{"when":"Usa quando sess\xf5es longas t\xeam de sobreviver \xe0 rota\xe7\xe3o de contas sem perder o contexto de trabalho.","avoid":"Evita quando a troca de contas \xe9 rara ou quando n\xe3o queres pedidos extra de resumo.","example":"Exemplo: sess\xf5es Codex que rodam por v\xe1rias contas perto de esgotar a quota."},"fill-first":{"when":"Use quando quiser esgotar totalmente a cota de um provedor ante
+TERM preserveSystemPrompt: do modelo"},"minRows":{"label":"M\xednimo de linhas a compactar","description":"N\xfamero m\xednimo de linhas num array JSON homog\xe9neo necess\xe1rio para acionar a compacta\xe7\xe3o tabular. Predefini\xe7\xe3o: 8."},"preserveSystemPrompt":{"label":"Preservar prompt do sistema"},"summarizerEnabled":{"label":"Ativar resumidor"},"maxTokensPerMessage":{"label":"Tokens m\xe1ximos por mensagem"},"minSavingsThreshold":{"label":"Limiar m\xednimo de poupan\xe7a"},"minScoreThreshold":{"label":"Limiar m\xednimo de pontua\xe7\xe3o"},"slmFallbackToAggressive":{"label":"Reverter para Agressivo"},"intensity":{"label":"Intensidade"},"minMessageL
+TERM trigger: de de spawn e n\xe3o podem ser contornados.","GENERIC":"Falha ao atualizar as defini\xe7\xf5es de autoriza\xe7\xe3o."},"remove":"Remover"},"resilienceBaseCooldownLabel":"Tempo de espera b\xe1sico","scopeLabel":"Escopo","triggerLabel":"Gatilho","effectLabel":"Efeito","statusEnabled":"Habilitado","statusDisabled":"Desativado","resilienceRequestQueueScope":"Fila por solicita\xe7\xe3o","resilienceRequestQueueTrigger":"Antes de enviar para o upstream","resilienceRequestQueueEffect":"Enfileira solicita\xe7\xf5es, limita a simultaneidade e espa\xe7a chamadas","resilienceRequestQueueDesc":"Esta camada controla apenas o enfileiramento e o ri
+
+FILE /app/.build/next/server/chunks/11652.js TERMS sessionId
+TERM sessionId: ){try{b=JSON.parse(e)}catch{continue}if(!q&&void 0!==b.result&&!b.method){q=!0,y("session/new",{cwd:process.cwd(),mcpServers:[],model:a||void 0});continue}if(q&&!r&&void 0!==b.result&&!b.method){let a=b.result;if(!(p=a?.sessionId||null))return void z("Devin ACP: session/new returned no sessionId");r=!0,s=!0,y("session/prompt",{sessionId:p,prompt:[{type:"text",text:m}]});continue}if("session/update"===b.method||"$/update"===b.method){let c=b.params;if(!c)continue;let e=c.update,f=e?.sessionUpdate??void 0,g=f??c.type;if("agent_message_chunk"===f){let b=function a(b){if("string"==typeof b)return b;if(Array.isArray(b))return b.map(b=>a(
+
+FILE /app/.build/next/server/chunks/12301.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ces.","avoid":"Epuka kwa mikusanyiko midogo yenye modeli 2 au pungufu — hakuna faida zaidi ya round-robin.","example":"Mfano: Inferensi yenye kiwango cha juu cha upitishaji katika endpoint 4+ za modeli zinazolingana."},"context-relay":{"when":"Tumia wakati vipindi virefu lazima viendelee kufanya kazi akaunti zinapobadilishwa bila kupoteza muktadha wa kazi.","avoid":"Epuka wakati ubadilishaji wa akaunti ni nadra au hutaki maombi ya ziada ya ufupishaji.","example":"Mfano: Vipindi vya Codex vinavyohama kati ya akaunti nyingi vinapokaribia kuishiwa na mgao."},"fill-first":{"when":"Tumia unapotaka kutumia kikamilifu mgao wa mtoa huduma m
+TERM preserveSystemPrompt: modeli"},"minRows":{"label":"Kiwango cha chini cha safu mlalo za kubana","description":"Kiwango cha chini cha safu mlalo katika safu ya JSON inayofanana inayohitajika ili kuanzisha ubana wa jedwali. Chaguo-msingi: 8."},"preserveSystemPrompt":{"label":"Hifadhi kidokezo cha mfumo"},"summarizerEnabled":{"label":"Wezesha kifupishaji"},"maxTokensPerMessage":{"label":"Kiwango cha juu cha tokeni kwa kila ujumbe"},"minSavingsThreshold":{"label":"Kiwango cha chini cha akiba"},"minScoreThreshold":{"label":"Kiwango cha chini cha alama"},"slmFallbackToAggressive":{"label":"Rejea kwenye Kali"},"intensity":{"label":"Ukali"},"minMessageLength":{"l
+TERM trigger:  kimoja au zaidi kinalenga njia zenye uwezo wa ku-spawn na haziwezi kupitwa.","GENERIC":"Imeshindwa kusasisha mipangilio ya authz."},"remove":"ondoa"},"resilienceBaseCooldownLabel":"Upole wa msingi","scopeLabel":"Upeo","triggerLabel":"Anzisha","effectLabel":"Athari","statusEnabled":"Imewashwa","statusDisabled":"Imezimwa","resilienceRequestQueueScope":"Kwa foleni ya ombi","resilienceRequestQueueTrigger":"Kabla ya kutuma kwa mkondo wa juu","resilienceRequestQueueEffect":"Huweka maombi kwenye foleni, huzuia upatanifu, na huweka nafasi nje ya simu","resilienceRequestQueueDesc":"Safu hii inadhibiti tu kupanga foleni na mwendo. Haihifadhi
+
+FILE /app/.build/next/server/chunks/12718.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: യോഗിക്കുക.","avoid":"2 അല്ലെങ്കിൽ അതിൽ കുറവ് മോഡലുകളുള്ള ചെറിയ കോംബോകൾക്ക് ഒഴിവാക്കുക — റൗണ്ട്-റോബിനേക്കാൾ അധിക പ്രയോജനമില്ല.","example":"ഉദാഹരണം: 4+ സമാന മോഡൽ എൻഡ്പോയിന്റുകളിലുടനീളമുള്ള ഉയർന്ന ത്രൂപുട്ടുള്ള ഇൻഫറൻസ്."},"context-relay":{"when":"പ്രവർത്തനത്തിലുള്ള കോൺടെക്സ്റ്റ് നഷ്ടപ്പെടാതെ ദൈർഘ്യമേറിയ സെഷനുകൾ അക്കൗണ്ട് റൊട്ടേഷനെ അതിജീവിക്കേണ്ടപ്പോൾ ഉപയോഗിക്കുക.","avoid":"അക്കൗണ്ട് മാറ്റുന്നത് അപൂർവമായിരിക്കുമ്പോഴോ അധിക സംഗ്രഹ അഭ്യർത്ഥനകൾ നിങ്ങൾക്ക് ആവശ്യമില്ലാത്തപ്പോഴോ ഒഴിവാക്കുക.","example":"ഉദാഹരണം: ക്വോട്ട തീരാറാകുമ്പോൾ ഒന്നിലധികം അക്കൗണ്ടുകളിലൂടെ റൊട്ടേറ്റ് ചെയ്യുന്ന Codex സെഷനുകൾ."},"fill-first":{"when":"അടുത്തതിലേക്ക് മാറുന്നതി
+TERM preserveSystemPrompt: ":{"label":"മോഡൽ പാത"},"minRows":{"label":"കോംപാക്റ്റ് ചെയ്യാനുള്ള ഏറ്റവും കുറഞ്ഞ വരികൾ","description":"ടാബുലാർ കോംപാക്ഷൻ പ്രവർത്തനക്ഷമമാക്കാൻ ഏകജാതീയ JSON അറേയിൽ ആവശ്യമായ ഏറ്റവും കുറഞ്ഞ വരികളുടെ എണ്ണം. ഡിഫോൾട്ട്: 8."},"preserveSystemPrompt":{"label":"സിസ്റ്റം പ്രോംപ്റ്റ് സംരക്ഷിക്കുക"},"summarizerEnabled":{"label":"സംഗ്രഹ സംവിധാനം പ്രവർത്തനക്ഷമമാക്കുക"},"maxTokensPerMessage":{"label":"ഓരോ സന്ദേശത്തിലുമുള്ള പരമാവധി ടോക്കണുകൾ"},"minSavingsThreshold":{"label":"ഏറ്റവും കുറഞ്ഞ ലാഭ പരിധി"},"minScoreThreshold":{"label":"ഏറ്റവും കുറഞ്ഞ സ്കോർ പരിധി"},"slmFallbackToAggressive":{"label":"തീവ്ര മോഡിലേക്ക് ഫാൾബാക്ക് ചെയ്യുക"},"intensity":{"labe
+TERM trigger: യാണ് ലക്ഷ്യമിടുന്നത്; അവ ബൈപാസ് ചെയ്യാൻ കഴിയില്ല.","GENERIC":"authz ക്രമീകരണങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു."},"remove":"നീക്കംചെയ്യുക"},"resilienceBaseCooldownLabel":"അടിസ്ഥാന കൂൾഡൗൺ","scopeLabel":"സ്കോപ്പ്","triggerLabel":"ട്രിഗർ","effectLabel":"പ്രഭാവം","statusEnabled":"പ്രവർത്തനക്ഷമം","statusDisabled":"പ്രവർത്തനരഹിതം","resilienceRequestQueueScope":"ഓരോ അഭ്യർത്ഥന ക്യൂവിനും","resilienceRequestQueueTrigger":"അപ്സ്ട്രീമിലേക്ക് അയയ്ക്കുന്നതിന് മുമ്പ്","resilienceRequestQueueEffect":"അഭ്യർത്ഥനകൾ ക്യൂവിലാക്കുകയും സമകാലികത പരിമിതപ്പെടുത്തുകയും കോളുകൾക്കിടയിൽ ഇടവേള നൽകുകയും ചെയ്യുന്നു","resilienceRequestQueueDesc":"ഈ ലെയർ ക്യൂയ
+
+FILE /app/.build/next/server/chunks/13275.js TERMS sessionId
+TERM sessionId: "`).join(" ")}function f(a){let b=a.created_at||a.createdAt||new Date().toISOString(),c=a.updated_at||a.updatedAt||b,d=a.expires_at??a.expiresAt??null;return{id:String(a.id),apiKeyId:String(a.api_key_id||a.apiKeyId||""),sessionId:String(a.session_id??a.sessionId??""),type:a.type,key:String(a.key||""),content:String(a.content||""),metadata:function(a){if(!a||"string"!=typeof a)return{};try{let b=JSON.parse(a);return"object"==typeof b&&null!==b?b:{}}catch{return{}}}(a.metadata),createdAt:new Date(b),updatedAt:new Date(c),expiresAt:d?new Date(String(d)):null,accessCount:"number"==typeof a.access_count?a.access_count:0,lastAccessedAt:a.
+
+FILE /app/.build/next/server/chunks/13660.js TERMS sessionId
+TERM sessionId: nce:l,actions:g&&f&&!h?[p("clear_model_lockout","Clear model lockout","medium",j,l)]:[]})}for(let b of h){let c=k(b.status);if(!c||!["warning","exhausted","error"].includes(c))continue;let d=k(b.accountId)??void 0,e=k(b.sessionId)??void 0,f={provider:k(b.provider)??a,...d?{connectionId:d}:{}};i.push({id:q("quota_monitor_warning",{...f,...e?{model:e}:{}}),severity:"warning"===c?"warning":"critical",kind:"quota_monitor_warning",title:`Quota monitor reports ${c}`,recommendation:"Review quota usage and rotate traffic to another healthy connection if needed.",target:f,evidence:{status:c,lastQuotaPercent:b.lastQuotaPercent??null,consecuti
+
+FILE /app/.build/next/server/chunks/14048.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: xf3 kis kombin\xe1ci\xf3kn\xe1l — nem ny\xfajt előnyt a ciklikus eloszt\xe1ssal szemben.","example":"P\xe9lda: Nagy \xe1teresztők\xe9pess\xe9gű k\xf6vetkeztet\xe9s 4 vagy t\xf6bb egyen\xe9rt\xe9kű modellv\xe9gponton."},"context-relay":{"when":"Akkor haszn\xe1lja, ha a hossz\xfa munkameneteknek a munkakontextus elveszt\xe9se n\xe9lk\xfcl kell \xe1tv\xe9szelni\xfck a fi\xf3kv\xe1lt\xe1st.","avoid":"Ker\xfclje, ha a fi\xf3kv\xe1lt\xe1s ritka, vagy ha nem szeretne tov\xe1bbi \xf6sszefoglal\xe1si k\xe9r\xe9seket.","example":"P\xe9lda: Codex-munkamenetek, amelyek a kv\xf3ta kimer\xfcl\xe9s\xe9hez k\xf6zeledve t\xf6bb fi\xf3k k\xf6z\xf6tt
+TERM preserveSystemPrompt: s":{"label":"T\xf6m\xf6r\xedtendő sorok minim\xe1lis sz\xe1ma","description":"Egy homog\xe9n JSON-t\xf6mb minim\xe1lis sorsz\xe1ma a t\xe1bl\xe1zatos t\xf6m\xf6r\xedt\xe9s ind\xedt\xe1s\xe1hoz. Alap\xe9rtelmezett: 8."},"preserveSystemPrompt":{"label":"Rendszer\xfczenet megőrz\xe9se"},"summarizerEnabled":{"label":"\xd6sszegző enged\xe9lyez\xe9se"},"maxTokensPerMessage":{"label":"Maxim\xe1lis tokenek sz\xe1ma \xfczenetenk\xe9nt"},"minSavingsThreshold":{"label":"Minim\xe1lis megtakar\xedt\xe1si k\xfcsz\xf6b"},"minScoreThreshold":{"label":"Minim\xe1lis pontsz\xe1mk\xfcsz\xf6b"},"slmFallbackToAggressive":{"label":"Visszal\xe9p\xe9s az Ag
+TERM trigger: ba: {message}","redisLauncherHint":"Egyen\xe9rt\xe9kű az `omniroute redis up` futtat\xe1s\xe1val. A kont\xe9ner neve `omniroute-redis`, \xe9s a 127.0.0.1:6379 c\xedmen figyel.","compressionSettingsAutoTriggerMode":"Auto trigger m\xf3d","compressionSettingsMcpDescriptionCompression":"MCP le\xedr\xe1s t\xf6m\xf6r\xedt\xe9s","mcpAccessibilityTitle":"MCP akad\xe1lymentess\xe9gi kimenet","compressionSettingsCavemanIntensity":"Barlangos ember intenzit\xe1sa","compressionSettingsCavemanOutputMode":"Caveman kimeneti m\xf3d","compressionSettingsOutputStyles":"Kimeneti st\xedlusok","compressionStylesTileTitle":"Kimeneti st\xedlusok","compress
+
+FILE /app/.build/next/server/chunks/14460.js TERMS sessionId
+TERM sessionId: j&&b)return{admit:!0,lease:b};let k=t(d,i),l=k.exhausted?{tokens:0,exhausted:!0}:t(e,i-k.tokens),m=Math.min(i,k.tokens+l.tokens);if(!(j||k.exhausted||l.exhausted||m>=i)||b)return{admit:!0,lease:b};let n=c.controller??(c.sessionId?$.getController(c.sessionId):W),o=n.tryAcquireHeavy();if(o){let a=n.tryAcquireBudget(D);if(a)return{admit:!0,lease:v(o,a)};o.release()}if(!(c.heapPressureCheck??Q)()){let a=n.tryAcquireHealthyHeadroom();if(a)return{admit:!0,lease:a}}let p=c.queueMs??0,q=await n.acquireHeavyWithin(p,c.signal,D,c.sessionId);if(!q)return{admit:!1,response:s(503,f,n.retryAfterSeconds(p))};let r=await n.acquireBudgetWithin(D,p,c
+
+FILE /app/.build/next/server/chunks/14461.js TERMS sessionId
+TERM sessionId: rn("[OmniRoute] Antigravity account is missing projectId. Attempting request with empty project — reconnect OAuth to resolve."),e="");let f=a.includes("/")?a.split("/").pop():a,h={project:e,requestId:(0,i.Ep)(),request:{sessionId:(0,i.a0)(c),contents:b.contents,systemInstruction:b.systemInstruction,generationConfig:(0,o.zE)(b.generationConfig),tools:b.tools,safetySettings:b.safetySettings},model:f,userAgent:(0,i.Xv)(c),requestType:"agent"};b._toolNameMap instanceof Map&&b._toolNameMap.size>0&&(h._toolNameMap=b._toolNameMap);let j={text:g.$V},k=h.request.systemInstruction?.parts?.slice()??[];if(h.request.systemInstruction={role:"syst
+
+FILE /app/.build/next/server/chunks/14509.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ces.","avoid":"Epuka kwa mikusanyiko midogo yenye modeli 2 au pungufu — hakuna faida zaidi ya round-robin.","example":"Mfano: Inferensi yenye kiwango cha juu cha upitishaji katika endpoint 4+ za modeli zinazolingana."},"context-relay":{"when":"Tumia wakati vipindi virefu lazima viendelee kufanya kazi akaunti zinapobadilishwa bila kupoteza muktadha wa kazi.","avoid":"Epuka wakati ubadilishaji wa akaunti ni nadra au hutaki maombi ya ziada ya ufupishaji.","example":"Mfano: Vipindi vya Codex vinavyohama kati ya akaunti nyingi vinapokaribia kuishiwa na mgao."},"fill-first":{"when":"Tumia unapotaka kutumia kikamilifu mgao wa mtoa huduma m
+TERM preserveSystemPrompt: modeli"},"minRows":{"label":"Kiwango cha chini cha safu mlalo za kubana","description":"Kiwango cha chini cha safu mlalo katika safu ya JSON inayofanana inayohitajika ili kuanzisha ubana wa jedwali. Chaguo-msingi: 8."},"preserveSystemPrompt":{"label":"Hifadhi kidokezo cha mfumo"},"summarizerEnabled":{"label":"Wezesha kifupishaji"},"maxTokensPerMessage":{"label":"Kiwango cha juu cha tokeni kwa kila ujumbe"},"minSavingsThreshold":{"label":"Kiwango cha chini cha akiba"},"minScoreThreshold":{"label":"Kiwango cha chini cha alama"},"slmFallbackToAggressive":{"label":"Rejea kwenye Kali"},"intensity":{"label":"Ukali"},"minMessageLength":{"l
+TERM trigger:  kimoja au zaidi kinalenga njia zenye uwezo wa ku-spawn na haziwezi kupitwa.","GENERIC":"Imeshindwa kusasisha mipangilio ya authz."},"remove":"ondoa"},"resilienceBaseCooldownLabel":"Upole wa msingi","scopeLabel":"Upeo","triggerLabel":"Anzisha","effectLabel":"Athari","statusEnabled":"Imewashwa","statusDisabled":"Imezimwa","resilienceRequestQueueScope":"Kwa foleni ya ombi","resilienceRequestQueueTrigger":"Kabla ya kutuma kwa mkondo wa juu","resilienceRequestQueueEffect":"Huweka maombi kwenye foleni, huzuia upatanifu, na huweka nafasi nje ya simu","resilienceRequestQueueDesc":"Safu hii inadhibiti tu kupanga foleni na mwendo. Haihifadhi
+
+FILE /app/.build/next/server/chunks/1535.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: বাচন চাইলে ব্যবহার করুন।","avoid":"২টি বা তার কম মডেলের ছোট কম্বোর ক্ষেত্রে এড়িয়ে চলুন—রাউন্ড-রবিনের তুলনায় কোনো সুবিধা নেই।","example":"উদাহরণ: ৪ বা তার বেশি সমতুল্য মডেল এন্ডপয়েন্ট জুড়ে উচ্চ-থ্রুপুট ইনফারেন্স।"},"context-relay":{"when":"কার্যকর প্রসঙ্গ না হারিয়ে দীর্ঘ সেশনগুলোকে অ্যাকাউন্ট রোটেশনের মধ্যেও সচল রাখতে হলে ব্যবহার করুন।","avoid":"অ্যাকাউন্ট বদলানো বিরল হলে বা অতিরিক্ত সারসংক্ষেপের অনুরোধ না চাইলে এড়িয়ে চলুন।","example":"উদাহরণ: কোটার সীমা প্রায় শেষ হয়ে এলে একাধিক অ্যাকাউন্টের মধ্যে রোটেট করা Codex সেশন।"},"fill-first":{"when":"পরবর্তী প্রোভাইডারে যাওয়ার আগে একটি প্রোভাইডারের কোটা সম্পূর্ণ শেষ করতে চাইলে ব্য
+TERM preserveSystemPrompt: েশন রেট"},"modelPath":{"label":"মডেল পাথ"},"minRows":{"label":"কম্প্যাক্ট করার জন্য ন্যূনতম সারি","description":"ট্যাবুলার কম্প্যাকশন ট্রিগার করার জন্য একটি সমজাতীয় JSON অ্যারেতে প্রয়োজনীয় ন্যূনতম সারি। ডিফল্ট: 8।"},"preserveSystemPrompt":{"label":"সিস্টেম প্রম্পট সংরক্ষণ করুন"},"summarizerEnabled":{"label":"সামারাইজার সক্ষম করুন"},"maxTokensPerMessage":{"label":"বার্তা প্রতি সর্বাধিক টোকেন"},"minSavingsThreshold":{"label":"ন্যূনতম সেভিংস থ্রেশহোল্ড"},"minScoreThreshold":{"label":"ন্যূনতম স্কোর থ্রেশহোল্ড"},"slmFallbackToAggressive":{"label":"অ্যাগ্রেসিভ-এ ফলব্যাক করুন"},"intensity":{"label":"তীব্রতা"},"minMessageLength":{"label"
+TERM trigger: ":"এক বা একাধিক প্রিফিক্স স্পন-সক্ষম রুটকে লক্ষ্য করে এবং এড়ানো যাবে না।","GENERIC":"authz সেটিংস আপডেট করতে ব্যর্থ হয়েছে।"},"remove":"অপসারণ করুন"},"resilienceBaseCooldownLabel":"বেস কুলডাউন","scopeLabel":"ব্যাপ্তি","triggerLabel":"ট্রিগার","effectLabel":"প্রভাব","statusEnabled":"সক্রিয়","statusDisabled":"অক্ষম","resilienceRequestQueueScope":"অনুরোধ সারি প্রতি","resilienceRequestQueueTrigger":"উজানে পাঠানোর আগে","resilienceRequestQueueEffect":"সারিবদ্ধ অনুরোধ, সীমাবদ্ধতা, এবং স্পেস আউট কল","resilienceRequestQueueDesc":"এই স্তরটি শুধুমাত্র সারিবদ্ধ এবং পেসিং নিয়ন্ত্রণ করে। এটি কুলডাউন বা খোলা সার্কিট ব্রেকার সংরক্ষণ করে না।","re
+
+FILE /app/.build/next/server/chunks/1551.js TERMS trigger
+TERM trigger: rDynamic=2]="AllowedInRuntimeOrDynamic",e[e.AllowedInDynamic=3]="AllowedInDynamic",e);class o{constructor({abortSignal:a,abandonController:b,syncIO:c,finalStage:d}){this.currentStage=1,this.syncInterruptReason=null,this.triggers={11:q(),13:q(),21:q(),23:q(),30:q()},this.abortSignal=a,this.abandonController=b,this.syncIOMode=c,this.finalStage=d,a&&a.addEventListener("abort",()=>{let{reason:b}=a;for(let a of Object.values(this.triggers)){var c,d;c=a,d=b,"pending"===c.state&&(c.state="cancelled",c._listeners.length=0,c.promise.catch(p),c._rejectPromise(d))}},{once:!0}),b&&b.signal.addEventListener("abort",()=>{this.abandonRender()},{on
+
+FILE /app/.build/next/server/chunks/1642.js TERMS handoffProviders,maxMessagesForSummary
+TERM handoffProviders: :e.z.boolean().optional(),healthCheckTimeoutMs:e.z.coerce.number().int().min(100).max(3e4).optional(),handoffThreshold:e.z.coerce.number().min(.5).max(.94).optional(),handoffModel:e.z.string().trim().max(200).optional(),handoffProviders:e.z.array(e.z.string().trim().min(1).max(100)).max(10).optional(),maxMessagesForSummary:e.z.coerce.number().int().min(5).max(100).optional(),maxComboDepth:e.z.coerce.number().int().min(1).max(10).optional(),maxGlobalAttempts:e.z.coerce.number().int().min(1).max(200).optional(),nestedComboMode:e.z.enum(["flatten","execute"]).optional(),trackMetrics:e.z.boolean().optional(),reasoningTokenBufferEnabled:
+TERM maxMessagesForSummary: ax(3e4).optional(),handoffThreshold:e.z.coerce.number().min(.5).max(.94).optional(),handoffModel:e.z.string().trim().max(200).optional(),handoffProviders:e.z.array(e.z.string().trim().min(1).max(100)).max(10).optional(),maxMessagesForSummary:e.z.coerce.number().int().min(5).max(100).optional(),maxComboDepth:e.z.coerce.number().int().min(1).max(10).optional(),maxGlobalAttempts:e.z.coerce.number().int().min(1).max(200).optional(),nestedComboMode:e.z.enum(["flatten","execute"]).optional(),trackMetrics:e.z.boolean().optional(),reasoningTokenBufferEnabled:e.z.boolean().optional(),reasoningTransportFallback:e.z.enum(["skip","drop"]).optio
+
+FILE /app/.build/next/server/chunks/16904.js TERMS preserveSystemPrompt,trigger
+TERM preserveSystemPrompt: urn a.adapted?{...c,body:a.restore(c.body)}:c}if("omniglyph"===c)return{body:b,compressed:!1,stats:null};let e=(0,u.m)(b,d?.config?.codexResponsesConfig?.preserveToolNames),f=e.body;if("lite"===c){let a=(0,g.r6)(f,{...d,preserveSystemPrompt:d?.config?.preserveSystemPrompt!==!1,...d?.config?.lite});return e.adapted?{...a,body:e.restore(a.body)}:a}if("stacked"===c){let a=aa(f,d?.config?.stackedPipeline,d);return e.adapted?{...a,body:e.restore(a.body)}:a}if("standard"===c){let a={...d?.config?.cavemanConfig??{},...d?.config?.languageConfig?.enabled?{language:d.config.languageConfig.defaultLanguage,autoDetectLanguage:d.config.languageCo
+TERM trigger: ]);function H(a,b){return b&&a.comboOverrides?a.comboOverrides[b]??null:null}function I(a,b){return a.autoTriggerTokens>0&&b>=a.autoTriggerTokens}function J(a){let b=a.contextBudget?.mode;return"floor"===b||"replace-autotrigger"===b}function K(a,b,c,d={},e=null){let f;if(!a.enabled)return(0,y.g5)({mode:"off",stackedPipeline:[]},"off");if(e){let b=(0,y.vy)(a,e,d);if(b)return f=b,(0,D.q9)(f,e)}if(H(a,b))f=(0,y.g5)((0,w.o)(a,{comboId:b,combos:d}),"routing-override");else if(a.activeComboId&&d[a.activeComboId])f=(0,y.g5)({mode:"stacked",stackedPipeline:d[a.activeComboId]},"active-profile");else if(!J(a)&&I(a,c)){let b=a.autoTriggerMode?
+
+FILE /app/.build/next/server/chunks/16930.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ces.","avoid":"Hindari untuk kombinasi kecil dengan 2 model atau kurang — tidak ada manfaat dibandingkan round-robin.","example":"Contoh: Inferensi dengan throughput tinggi di 4 atau lebih endpoint model yang setara."},"context-relay":{"when":"Gunakan saat sesi panjang harus tetap bertahan selama rotasi akun tanpa kehilangan konteks kerja.","avoid":"Hindari saat perpindahan akun jarang terjadi atau saat Anda tidak menginginkan permintaan peringkasan tambahan.","example":"Contoh: Sesi Codex yang dirotasi di beberapa akun saat kuota hampir habis."},"fill-first":{"when":"Gunakan ketika Anda ingin menghabiskan kuota satu penyedia sepenu
+TERM preserveSystemPrompt: presi"},"modelPath":{"label":"Jalur model"},"minRows":{"label":"Baris minimum untuk dipadatkan","description":"Jumlah baris minimum dalam array JSON homogen yang diperlukan untuk memicu pemadatan tabular. Default: 8."},"preserveSystemPrompt":{"label":"Pertahankan prompt sistem"},"summarizerEnabled":{"label":"Aktifkan peringkas"},"maxTokensPerMessage":{"label":"Token maksimum per pesan"},"minSavingsThreshold":{"label":"Ambang batas penghematan minimum"},"minScoreThreshold":{"label":"Ambang batas skor minimum"},"slmFallbackToAggressive":{"label":"Fallback ke Agresif"},"intensity":{"label":"Intensitas"},"minMessageLength":{"label":"Pan
+TERM trigger: pa prefiks menargetkan rute yang mendukung spawn dan tidak dapat dilewati.","GENERIC":"Gagal memperbarui pengaturan authz."},"remove":"Hapus"},"resilienceBaseCooldownLabel":"Cooldown dasar","scopeLabel":"Ruang lingkup","triggerLabel":"Pemicu","effectLabel":"Efek","statusEnabled":"Diaktifkan","statusDisabled":"Dengan disabilitas","resilienceRequestQueueScope":"Per antrian permintaan","resilienceRequestQueueTrigger":"Sebelum dikirim ke hulu","resilienceRequestQueueEffect":"Mengantri permintaan, membatasi konkurensi, dan membatasi panggilan","resilienceRequestQueueDesc":"Lapisan ini hanya mengontrol antrian dan mondar-mandir. Itu tidak
+
+FILE /app/.build/next/server/chunks/17201.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: nebo m\xe9ně modely — oproti cyklick\xe9mu v\xfdběru nepřin\xe1š\xed ž\xe1dnou v\xfdhodu.","example":"Př\xedklad: Inference s vysokou propustnost\xed např\xedč 4 nebo v\xedce rovnocenn\xfdmi koncov\xfdmi body modelů."},"context-relay":{"when":"Použijte, když mus\xed dlouh\xe9 relace přež\xedt rotaci \xfačtů bez ztr\xe1ty pracovn\xedho kontextu.","avoid":"Nepouž\xedvejte, pokud k přep\xedn\xe1n\xed \xfačtů doch\xe1z\xed zř\xeddka nebo pokud nechcete dalš\xed požadavky na sumarizaci.","example":"Př\xedklad: relace Codex, kter\xe9 při bl\xedž\xedc\xedm se vyčerp\xe1n\xed kv\xf3ty rotuj\xed mezi v\xedce \xfačty."},"fill-first":{"when":"
+
+FILE /app/.build/next/server/chunks/17391.js TERMS sessionId
+TERM sessionId: x-session-id"),q(b,"x_session_id"),q(b,"session-id"),q(b,"session_id"),q(b,"x-omniroute-session-id"),q(b,"x-omniroute-session"),function(a){if(!a||"object"!=typeof a||Array.isArray(a))return"";let b=m(a.session_id)||m(a.sessionId);if(b)return b;let c=a.user_id;if(c&&"object"==typeof c&&!Array.isArray(c))return m(c.session_id);if("string"!=typeof c||c.length>4096)return"";try{let a=JSON.parse(c);return a&&"object"==typeof a&&!Array.isArray(a)?m(a.session_id):""}catch{return""}}(a.metadata),m(a.conversation_id),m(a.conversationId),m(a.session_id),m(a.sessionId),m(a.prompt_cache_key),m(a.promptCacheKey)].find(a=>a.length>0&&a.length<=4
+
+FILE /app/.build/next/server/chunks/18637.js TERMS context-relay
+TERM context-relay: )?{success:!1,response:d.NextResponse.json({error:g.error},{status:400})}:{success:!0,data:g.data}}},592573:(a,b,c)=>{"use strict";c.d(b,{aU:()=>g,gG:()=>d,lr:()=>h,wZ:()=>f});let d=["priority","weighted","round-robin","context-relay","fill-first","p2c","random","least-used","cost-optimized","reset-aware","reset-window","headroom","quota-weighted","strict-random","auto","lkgp","context-optimized","cache-optimized","fusion","pipeline"],e=["quota-share"],f=["rules","score","cost","eco","latency","fast","sla-aware","sla","lkgp"],g=["priority","weighted","fill-first","round-robin","p2c","random","least-used","cost-optimized","expiry-fir
+
+FILE /app/.build/next/server/chunks/18692.js TERMS trigger
+TERM trigger: "*"]'),enabled:1===a.enabled}}function f(){return(0,d.getDbInstance)().prepare("SELECT * FROM webhooks WHERE enabled = 1").all().map(e)}function g(a,b,c){let e=(0,d.getDbInstance)();c?e.prepare("UPDATE webhooks SET last_triggered_at = datetime('now'), last_status = ?, failure_count = 0 WHERE id = ?").run(b,a):e.prepare("UPDATE webhooks SET last_triggered_at = datetime('now'), last_status = ?, failure_count = failure_count + 1 WHERE id = ?").run(b,a)}function h(a=10){return(0,d.getDbInstance)().prepare("UPDATE webhooks SET enabled = 0 WHERE failure_count >= ? AND enabled = 1").run(a).changes}c(455511)}};
+
+FILE /app/.build/next/server/chunks/18876.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ाहते हैं, तब उपयोग करें।","avoid":"2 या उससे कम मॉडलों वाले छोटे कॉम्बो के लिए इसका उपयोग न करें — round-robin की तुलना में कोई लाभ नहीं मिलता।","example":"उदाहरण: 4+ समकक्ष मॉडल एंडपॉइंट्स पर उच्च-थ्रूपुट इन्फ़रेंस।"},"context-relay":{"when":"जब लंबे सेशन को कार्यशील कॉन्टेक्स्ट खोए बिना अकाउंट रोटेशन के दौरान जारी रखना आवश्यक हो, तब उपयोग करें।","avoid":"जब अकाउंट स्विचिंग कम होती हो या आप अतिरिक्त सारांश अनुरोध नहीं चाहते हों, तब इसका उपयोग न करें।","example":"उदाहरण: कोटा समाप्त होने के करीब कई अकाउंट्स के बीच रोटेट होने वाले Codex सेशन।"},"fill-first":{"when":"जब आप दूसरे प्रदाता पर जाने से पहले एक प्रदाता का कोटा पूरी तरह समाप
+
+FILE /app/.build/next/server/chunks/18976.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: :"Undg\xe5 denne til sm\xe5 kombinationer med 2 eller f\xe6rre modeller — ingen fordel i forhold til round-robin.","example":"Eksempel: Inferens med h\xf8j kapacitet p\xe5 tv\xe6rs af 4+ tilsvarende modelslutpunkter."},"context-relay":{"when":"Brug denne, n\xe5r lange sessioner skal overleve kontorotation uden at miste arbejdskonteksten.","avoid":"Undg\xe5 denne, n\xe5r der sj\xe6ldent skiftes konto, eller n\xe5r du ikke \xf8nsker ekstra foresp\xf8rgsler om opsummering.","example":"Eksempel: Codex-sessioner, der roterer mellem flere konti, n\xe5r kvoten er t\xe6t p\xe5 at v\xe6re opbrugt."},"fill-first":{"when":"Bruges, n\xe5r du vi
+
+FILE /app/.build/next/server/chunks/18981.js TERMS sessionId
+TERM sessionId: eturn!0;if(b.profile&&"all"!==b.profile&&("llm"===b.profile&&"llm"!==a.detectedKind||"custom"===b.profile&&"custom-host"!==a.source)||b.host&&a.host!==b.host||b.agent&&a.agent!==b.agent||b.source&&a.source!==b.source||b.sessionId&&a.sessionId!==b.sessionId)return!1;if(b.status){var c;if(("error"===(c=a.status)?"error":"in-flight"===c?"in-flight":"number"!=typeof c?"unknown":c>=200&&c<300?"2xx":c>=300&&c<400?"3xx":c>=400&&c<500?"4xx":c>=500&&c<600?"5xx":"unknown")!==b.status)return!1}return!0})(b,a)):[...this.buffer]}clear(){this.buffer=[],this.broadcast({type:"clear"})}subscribe(a){this.subscribers.add(a);try{a({type:"snapshot",data
+
+FILE /app/.build/next/server/chunks/1915.js TERMS sessionId
+TERM sessionId: r(let[b,c]of h)c.expiresAt<=a&&h.delete(b)}function m(a){l();let b=(0,d.randomUUID)(),c=Date.now();return h.set(b,{verifier:a.verifier,challenge:a.challenge,uuid:a.uuid,loginUrl:a.loginUrl,createdAt:c,expiresAt:c+9e5}),{sessionId:b,loginUrl:a.loginUrl}}function n(a){return l(),h.get(a)??null}function o(a){l();let b=h.get(a)??null;return b&&h.delete(a),b}function p(a){return l(),h.delete(a)}async function q(a,b,c){let d=`${g.WN.pollUrl}?uuid=${encodeURIComponent(a)}&verifier=${encodeURIComponent(b)}`;try{let a=await fetch(d,{signal:c});if(404===a.status)return{status:"pending"};if(a.ok){let b=await a.json();if(!b.accessToken||!b.refr
+
+FILE /app/.build/next/server/chunks/19615.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: es។","avoid":"ជៀសវាងសម្រាប់ក្រុមបន្សំតូចៗដែលមានម៉ូដែល 2 ឬតិចជាងនេះ — មិនមានអត្ថប្រយោជន៍លើសពី round-robin ទេ។","example":"ឧទាហរណ៍៖ ការធ្វើ inference ដែលមានបរិមាណខ្ពស់ ឆ្លងកាត់ endpoint ម៉ូដែលសមមូលចំនួន 4 ឬច្រើនជាងនេះ។"},"context-relay":{"when":"ប្រើនៅពេលសម័យប្រើប្រាស់រយៈពេលវែងត្រូវតែបន្តដំណើរការ ទោះបីមានការប្តូរគណនីក៏ដោយ ដោយមិនបាត់បង់បរិបទការងារ។","avoid":"ជៀសវាងនៅពេលកម្រមានការប្តូរគណនី ឬនៅពេលអ្នកមិនចង់ឱ្យមានសំណើសង្ខេបបន្ថែម។","example":"ឧទាហរណ៍៖ សម័យប្រើប្រាស់ Codex ដែលប្តូរឆ្លងកាត់គណនីច្រើន នៅពេលជិតអស់កូតា។"},"fill-first":{"when":"ប្រើនៅពេលអ្នកចង់ប្រើកូតារបស់អ្នកផ្តល់សេវាមួយឱ្យអស់ទាំងស្រុង មុនពេលប្តូរទៅអ្នកផ្តល់សេវាបន្ទាប់។","avoid
+
+FILE /app/.build/next/server/chunks/19681.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: Two-Choices.","avoid":"Izbjegavajte za male kombinacije s 2 ili manje modela — nema prednosti u odnosu na round-robin.","example":"Primjer: Zaključivanje visoke propusnosti na 4+ ekvivalentnih krajnjih točaka modela."},"context-relay":{"when":"Koristite kada dulje sesije moraju preživjeti rotaciju računa bez gubitka radnog konteksta.","avoid":"Izbjegavajte kada je prebacivanje računa rijetko ili kada ne želite dodatne zahtjeve za sažimanjem.","example":"Primjer: Codex sesije koje se izmjenjuju između više računa kada su kvote gotovo iscrpljene."},"fill-first":{"when":"Koristite kada želite potpuno iscrpiti kvotu jednog pružatelja us
+
+FILE /app/.build/next/server/chunks/20047.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ड हवी असल्यास वापरा.","avoid":"2 किंवा त्यापेक्षा कमी मॉडेल्स असलेल्या लहान संयोजनांसाठी वापर टाळा — राउंड-रॉबिनच्या तुलनेत कोणताही फायदा नाही.","example":"उदाहरण: 4+ समतुल्य मॉडेल एंडपॉइंट्सवर उच्च-थ्रूपुट इन्फरन्स."},"context-relay":{"when":"कार्यरत संदर्भ न गमावता खाते रोटेशनदरम्यान दीर्घ सत्रे टिकवायची असल्यास वापरा.","avoid":"खाते बदलणे क्वचित होत असल्यास किंवा सारांश तयार करण्यासाठी अतिरिक्त विनंत्या नको असल्यास वापर टाळा.","example":"उदाहरण: कोटा संपत आल्यावर अनेक खात्यांमध्ये रोटेट होणारी Codex सत्रे."},"fill-first":{"when":"पुढील प्रदात्याकडे जाण्यापूर्वी एका प्रदात्याचा कोटा पूर्णपणे वापरायचा असल्यास वापरा.","avoid":"प्रदा
+
+FILE /app/.build/next/server/chunks/20286.js TERMS sessionId
+TERM sessionId: .values()].sort((a,b)=>a.index-b.index)),!aD||e.trim()||i.trim()?aD&&!e.trim()&&i.trim()&&(h.content=""):console.warn(`[STREAM] Empty assistant response after tool_calls completion (${ad||"provider"}:${ai||"unknown"}) — sessionId=${a6}`);let j={choices:[{message:h,finish_reason:aD?"tool_calls":"stop"}],usage:{prompt_tokens:b,completion_tokens:c,total_tokens:b+c},_streamed:!0};am({status:200,usage:aC,responseBody:j,reasoningMeta:aY.take(),...au.completionTiming(),providerPayload:ba.build(d===f.h.OPENAI_RESPONSES?ba.getSummary():{object:"chat.completion",...j},{includeEvents:!1}),clientPayload:bb.build(w===f.h.OPENAI_RESPONSES?bb.getS
+
+FILE /app/.build/next/server/chunks/20420.js TERMS sessionId
+TERM sessionId: b,{__:()=>i,om:()=>j,xq:()=>k});let d=["x-opencode-session","x-session-affinity","x-session-id","x-claude-code-session-id","session_id","session-id","x-session_id","thread_id","thread-id","x-thread-id"],e=["session_id","sessionId","thread_id","threadId","conversation_id","conversationId"];function f(a){return a&&"object"==typeof a&&!Array.isArray(a)?a:void 0}function g(a){if(!("string"!=typeof a||a.length>256||/[\u0000-\u001f\u007f]/.test(a)))return a.trim()||void 0}function h(a){let b=f(a);if(b)for(let a of e){let c=g(b[a]);if(c)return c}}function i(a,b){let c=new Map(Object.entries(a||{}).map(([a,b])=>[a.toLowerCase(),b]));for(let
+
+FILE /app/.build/next/server/chunks/20887.js TERMS preserveSystemPrompt
+TERM preserveSystemPrompt:  b=Math.floor(a);return b>=256&&b<=1e6}function i(a){return void 0!==a&&/\S/.test(a)}function j(a,b){let c=a,d=[],g=function(a,b={}){if(!a.messages)return{body:a,applied:!1};let c=!1,d=a.messages.map(a=>{var d;if(!0===b.preserveSystemPrompt&&"system"===a.role||"string"!=typeof a.content)return a;let e=(d=a.content)?d.replace(/\n{3,}/g,"\n\n").replace(/[ \t]+$/gm,""):"";return e!==a.content&&(c=!0),{...a,content:e}});return{body:{...a,messages:d},applied:c}}(c,b);c=g.body,g.applied&&d.push("whitespace");let j=function(a,b={}){if(!a.messages||!0===b.preserveSystemPrompt)return{body:a,applied:!1};let c=new Set,d=!1,e=a.messages.filter(
+
+FILE /app/.build/next/server/chunks/20958.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ယ် 2 ခု သို့မဟုတ် ထိုထက်နည်းသည့် combo အသေးစားများတွင် ရှောင်ပါ — round-robin ထက် အကျိုးကျေးဇူးမရှိပါ။","example":"ဥပမာ- စွမ်းဆောင်ရည်တူညီသော မော်ဒယ် endpoint 4+ ခုအကြား ထုတ်လုပ်မှုနှုန်းမြင့် inference ပြုလုပ်ခြင်း။"},"context-relay":{"when":"အလုပ်လုပ်နေသော ဆက်စပ်အကြောင်းအရာကို မဆုံးရှုံးဘဲ အကောင့်လှည့်ပြောင်းမှုကို ကာလရှည် session များက ခံနိုင်ရည်ရှိရမည့်အခါ အသုံးပြုပါ။","avoid":"အကောင့်ပြောင်းခြင်း ရှားပါးသည့်အခါ သို့မဟုတ် အပိုအကျဉ်းချုပ်တောင်းဆိုမှုများကို မလိုချင်သည့်အခါ ရှောင်ပါ။","example":"ဥပမာ- ခွဲတမ်းကုန်ခါနီးတွင် အကောင့်များစွာအကြား လှည့်ပြောင်းသည့် Codex session များ။"},"fill-first":{"when":"နောက်တစ်ခုသို့ မပြောင်းမီ pro
+
+FILE /app/.build/next/server/chunks/21365.js TERMS trigger
+TERM trigger: d.instructions.length>0&&s.push(d.instructions),"string"==typeof d.input)q.push({role:"user",content:d.input,timestamp:j});else if(d.input)for(let a of d.input){let b=a.type??("role"in a?"message":void 0);if("compaction_trigger"===b){x=!0;continue}if("additional_tools"===b){Array.isArray(a.tools)&&w.push(...a.tools);continue}if("compaction"===b||"compaction_summary"===b||"context_compaction"===b){let c=a.encrypted_content;if("context_compaction"===b&&"string"!=typeof c)continue;t.length=0,q.push({role:"user",content:(0,g.DT)("string"==typeof c?c:void 0),timestamp:j});continue}if("agent_message"===b){var z;z=a.content,Array.isArray(z
+
+FILE /app/.build/next/server/chunks/21978.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ces.","avoid":"Evitala per combinazioni piccole con 2 modelli o meno: non offre alcun vantaggio rispetto al round-robin.","example":"Esempio: inferenza ad alta capacit\xe0 su almeno 4 endpoint di modelli equivalenti."},"context-relay":{"when":"Usa questa opzione quando le sessioni lunghe devono continuare anche dopo la rotazione degli account senza perdere il contesto di lavoro.","avoid":"Evitala quando il cambio di account \xe8 raro o non vuoi richieste di riepilogo aggiuntive.","example":"Esempio: sessioni Codex che ruotano tra pi\xf9 account prossimi all\'esaurimento della quota."},"fill-first":{"when":"Da utilizzare quando si de
+
+FILE /app/.build/next/server/chunks/22122.js TERMS sessionId
+TERM sessionId: 1),N=(0,e.useRef)(!1),O=async()=>{K(!0),w(null),G(""),I("");try{let a=await fetch("/api/oauth/cursor/login/start",{method:"POST"}),b=await a.json();if(!a.ok)throw Error((0,j.O)(b,m("errorLoginStart")));G(b.loginUrl),I(b.sessionId),P(b.sessionId)}catch(a){w(a instanceof Error?a.message:m("errorLoginStart"))}finally{K(!1)}},P=async a=>{M(!0),N.current=!1;let d=1e3;try{for(let e=0;e<150;e++){if(N.current||(await new Promise(a=>setTimeout(a,d)),N.current))return;let e=await fetch("/api/oauth/cursor/login/poll",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:a})}),f=await e.json();if("pending"===
+
+FILE /app/.build/next/server/chunks/22153.js TERMS context-relay,preserveSystemPrompt,trigger
+TERM context-relay: ":"Power-of-Two-Choices አልጎሪዝምን በመጠቀም ዝቅተኛ የምላሽ ጊዜ ያለው ምርጫ ሲፈልጉ ይጠቀሙ።","avoid":"2 ወይም ከዚያ ያነሱ ሞዴሎች ላሏቸው ትናንሽ ጥምረቶች አይጠቀሙ — ከround-robin የተሻለ ጥቅም የለውም።","example":"ምሳሌ፦ በ4+ ተመጣጣኝ የሞዴል መዳረሻዎች ላይ ከፍተኛ ፍሰት ያለው የግምት ማስኬጃ።"},"context-relay":{"when":"ረጅም ክፍለ ጊዜዎች የሥራ አውዱን ሳያጡ የመለያ መቀያየርን መቋቋም ሲኖርባቸው ይጠቀሙ።","avoid":"የመለያ መቀያየር አልፎ አልፎ ብቻ ሲከሰት ወይም ተጨማሪ የማጠቃለያ ጥያቄዎችን ካልፈለጉ አይጠቀሙ።","example":"ምሳሌ፦ ኮታው ሊያልቅ ሲቃረብ በበርካታ መለያዎች መካከል የሚቀያየሩ Codex ክፍለ ጊዜዎች።"},"fill-first":{"when":"ወደ ቀጣዩ ከመሄድዎ በፊት የአንድ አቅራቢን ኮታ ሙሉ በሙሉ ማሟጠጥ ሲፈልጉ ይጠቀሙ።","avoid":"በአቅራቢዎች መካከል በጥያቄ ደረጃ የጭነት ማመጣጠን ሲያስፈልግዎት አይጠቀሙ።","example":"ምሳሌ፦ ወደ Groq ከመቀየርዎ በፊት ሁሉንም $200 Deepgram ክሬዲቶ
+
+FILE /app/.build/next/server/chunks/22214.js TERMS context-relay,preserveSystemPrompt,trigger
+[opc@litellm-gateway ~]$
+
+
+
+
+
+
+
+
