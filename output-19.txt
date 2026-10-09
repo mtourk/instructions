@@ -1,0 +1,415 @@
+
+[opc@litellm-gateway ~]$
+[opc@litellm-gateway ~]$
+podman exec omniroute node -e '
+const fs = require("fs");
+const path = require("path");
+
+const roots = [
+  "/app/src/sse/handlers/chat.ts",
+  "/app/open-sse/services/contextHandoff.ts",
+  "/app/open-sse/services/combo.ts",
+  "/app/.build/next/server/chunks/32948.js"
+];
+const terms = [
+  "injectHandoffIntoBody",
+  "getHandoff",
+  "deleteHandoff",
+  "fromAccount",
+  "universal-handoff",
+  "previousModel",
+  "currentModel",
+  "connectionId",
+  "currModel"
+];
+
+let printed = 0;
+for (const f of roots) {
+  console.log("\n========== FILE: " + f + " ==========");
+  if (!fs.existsSync(f)) {
+    console.log("NOT_PRESENT");
+    continue;
+  }
+  const s = fs.readFileSync(f, "utf8");
+  console.log("SIZE=" + s.length);
+  for (const term of terms) {
+    let p = 0, count = 0;
+    while ((p = s.indexOf(term, p)) !== -1 && count < 2 && printed < 24) {
+      console.log("\n--- " + term + " @" + p + " ---");
+      console.log(s.slice(Math.max(0,p-300), Math.min(s.length,p+650))
+        .replace(/\s+/g," "));
+      p += term.length;
+      count++;
+      printed++;
+    }
+  }
+}
+
+const dir = "/app/.build/next/server/chunks";
+console.log("\n========== OTHER BUILD CHUNKS ==========");
+if (fs.existsSync(dir)) {
+  for (const name of fs.readdirSync(dir).filter(n => n.endsWith(".js"))) {
+    const f = path.join(dir, name);
+    let s;
+    try { s = fs.readFileSync(f, "utf8"); } catch { continue; }
+    if (!terms.some(t => s.includes(t))) continue;
+    console.log(name + " | " +
+      terms.filter(t => s.includes(t)).join(", "));
+  }
+}
+'
+
+========== FILE: /app/src/sse/handlers/chat.ts ==========
+NOT_PRESENT
+
+========== FILE: /app/open-sse/services/contextHandoff.ts ==========
+NOT_PRESENT
+
+========== FILE: /app/open-sse/services/combo.ts ==========
+NOT_PRESENT
+
+========== FILE: /app/.build/next/server/chunks/32948.js ==========
+SIZE=311906
+
+--- fromAccount @267925 ---
+quest:"context-handoff"},c);if(!h.ok)return void u("unavailable",a.comboName,`summary model call failed: status=${h.status} model=${c}`);let i="";try{let a=await h.clone().json();i=r(a)}catch{try{i=await h.clone().text()}catch{i=""}}let j=p(i);j?(0,e.Wk)({sessionId:a.sessionId,comboName:a.comboName,fromAccount:a.connectionId,summary:j.summary,keyDecisions:j.keyDecisions,taskProgress:j.taskProgress,activeEntities:j.activeEntities,messageCount:Array.isArray(a.messages)?a.messages.length:0,model:c,warningThresholdPct:b.handoffThreshold,generatedAt:new Date().toISOString(),expiresAt:a.expiresAt||new Date(Date.now()+18e6).toISOString()}):u("unparseable",a.comboName,`model=${c} contentPreview=${JSON.stringify(i.slice(0,200))}`)}function t(a){var b,c;if(!a.sessionId||!a.connectionId)return;let d=k(a.config);if(0===d.handoffProviders.length||a.percentUsed<d.handoffThreshold||a.percentUsed>=.95||((0,e.jc)(),(0,e.fd)(a.sessionId,a.comboName)))ret
+
+--- fromAccount @269975 ---
+: status=${g.status} model=${f}`;return u("unavailable",a.comboName,b),"unavailable"}let h=await v(g),i=p(h);if(!i){let b=JSON.stringify(h.slice(0,200)),c=`model=${f} contentPreview=${b}`;return u("unparseable",a.comboName,c),"unparseable"}return(0,e.Wk)({sessionId:a.sessionId,comboName:a.comboName,fromAccount:`universal:${a.prevModel}`,summary:i.summary,keyDecisions:i.keyDecisions,taskProgress:i.taskProgress,activeEntities:i.activeEntities,messageCount:Array.isArray(a.messages)?a.messages.length:0,model:f,lastModel:a.prevModel,warningThresholdPct:0,generatedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+a.ttlMs).toISOString()}),"generated"}function x(a){var b,c;let d,f=function(a){if(!a.universalConfig.enabled||!a.previousModel||a.previousModel===a.currentModel)return"skip";if(a.sessionId){let b=(0,e.Pu)(a.sessionId,a.comboName);if(b&&b.summary)return"inject"}return"generate"}({sessionId:a.sessionId,comboName:a.comboName,pre
+
+--- universal-handoff @268897 ---
+Id,c=a.comboName,`${b}::${c}`);A.has(f)||(A.add(f),setImmediate(()=>{s({...a,sessionId:a.sessionId,connectionId:a.connectionId,config:d}).catch(a=>{console.warn("[context-relay] Handoff generation failed:",a?.message||a)}).finally(()=>{A.delete(f)})}))}let E=new Map;function u(a,b,c){console.warn(`[universal-handoff] ${a} (combo=${b}): ${c}`)}async function v(a){try{return r(await a.clone().json())}catch{return await a.clone().text().catch(()=>"")}}async function w(a){let b=n(Array.isArray(a.messages)?a.messages:[],a.maxMessages,a.relayMode),c=m(b);if(!c)return u("unavailable",a.comboName,"empty selected-message history"),"unavailable";let d=B.replace("{HISTORY}",c),f=a.handoffModel||a.currModel;if(a.providerAllowlist.length>0){let b=f.indexOf("/"),c=b>0?f.slice(0,b):"";if(c&&!a.providerAllowlist.includes(c))return"unavailable"}let g=await a.handleSingleModel({model:f,messages:[{role:"user",content:d}],stream:!1,max_tokens:800,temperatu
+
+--- universal-handoff @269610 ---
+viderAllowlist.length>0){let b=f.indexOf("/"),c=b>0?f.slice(0,b):"";if(c&&!a.providerAllowlist.includes(c))return"unavailable"}let g=await a.handleSingleModel({model:f,messages:[{role:"user",content:d}],stream:!1,max_tokens:800,temperature:.1,_omnirouteSkipContextRelay:!0,_omnirouteInternalRequest:"universal-handoff"},f);if(!g.ok){let b=`summary model call failed: status=${g.status} model=${f}`;return u("unavailable",a.comboName,b),"unavailable"}let h=await v(g),i=p(h);if(!i){let b=JSON.stringify(h.slice(0,200)),c=`model=${f} contentPreview=${b}`;return u("unparseable",a.comboName,c),"unparseable"}return(0,e.Wk)({sessionId:a.sessionId,comboName:a.comboName,fromAccount:`universal:${a.prevModel}`,summary:i.summary,keyDecisions:i.keyDecisions,taskProgress:i.taskProgress,activeEntities:i.activeEntities,messageCount:Array.isArray(a.messages)?a.messages.length:0,model:f,lastModel:a.prevModel,warningThresholdPct:0,generatedAt:new Date().toISOS
+
+--- previousModel @270411 ---
+Entities,messageCount:Array.isArray(a.messages)?a.messages.length:0,model:f,lastModel:a.prevModel,warningThresholdPct:0,generatedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+a.ttlMs).toISOString()}),"generated"}function x(a){var b,c;let d,f=function(a){if(!a.universalConfig.enabled||!a.previousModel||a.previousModel===a.currentModel)return"skip";if(a.sessionId){let b=(0,e.Pu)(a.sessionId,a.comboName);if(b&&b.summary)return"inject"}return"generate"}({sessionId:a.sessionId,comboName:a.comboName,previousModel:a.prevModel,currentModel:a.currModel,universalConfig:a.universalConfig});if("generate"!==f||!a.sessionId)return;let g=(b=a.sessionId,c=a.comboName,`${b}::${c}`);if((d=E.get(g))&&Date.now()<d.retryAfter||A.has(g))return;A.add(g);let h=60*(a.universalConfig.ttlMinutes||300)*1e3;setImmediate(()=>{w({sessionId:a.sessionId,comboName:a.comboName,messages:a.messages,prevModel:a.prevModel||"unknown",currModel:a.currModel,handoffM
+
+--- previousModel @270428 ---
+ount:Array.isArray(a.messages)?a.messages.length:0,model:f,lastModel:a.prevModel,warningThresholdPct:0,generatedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+a.ttlMs).toISOString()}),"generated"}function x(a){var b,c;let d,f=function(a){if(!a.universalConfig.enabled||!a.previousModel||a.previousModel===a.currentModel)return"skip";if(a.sessionId){let b=(0,e.Pu)(a.sessionId,a.comboName);if(b&&b.summary)return"inject"}return"generate"}({sessionId:a.sessionId,comboName:a.comboName,previousModel:a.prevModel,currentModel:a.currModel,universalConfig:a.universalConfig});if("generate"!==f||!a.sessionId)return;let g=(b=a.sessionId,c=a.comboName,`${b}::${c}`);if((d=E.get(g))&&Date.now()<d.retryAfter||A.has(g))return;A.add(g);let h=60*(a.universalConfig.ttlMinutes||300)*1e3;setImmediate(()=>{w({sessionId:a.sessionId,comboName:a.comboName,messages:a.messages,prevModel:a.prevModel||"unknown",currModel:a.currModel,handoffModel:a.universalC
+
+--- currentModel @270446 ---
+(a.messages)?a.messages.length:0,model:f,lastModel:a.prevModel,warningThresholdPct:0,generatedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+a.ttlMs).toISOString()}),"generated"}function x(a){var b,c;let d,f=function(a){if(!a.universalConfig.enabled||!a.previousModel||a.previousModel===a.currentModel)return"skip";if(a.sessionId){let b=(0,e.Pu)(a.sessionId,a.comboName);if(b&&b.summary)return"inject"}return"generate"}({sessionId:a.sessionId,comboName:a.comboName,previousModel:a.prevModel,currentModel:a.currModel,universalConfig:a.universalConfig});if("generate"!==f||!a.sessionId)return;let g=(b=a.sessionId,c=a.comboName,`${b}::${c}`);if((d=E.get(g))&&Date.now()<d.retryAfter||A.has(g))return;A.add(g);let h=60*(a.universalConfig.ttlMinutes||300)*1e3;setImmediate(()=>{w({sessionId:a.sessionId,comboName:a.comboName,messages:a.messages,prevModel:a.prevModel||"unknown",currModel:a.currModel,handoffModel:a.universalConfig.handoffModel
+
+--- currentModel @270648 ---
+{var b,c;let d,f=function(a){if(!a.universalConfig.enabled||!a.previousModel||a.previousModel===a.currentModel)return"skip";if(a.sessionId){let b=(0,e.Pu)(a.sessionId,a.comboName);if(b&&b.summary)return"inject"}return"generate"}({sessionId:a.sessionId,comboName:a.comboName,previousModel:a.prevModel,currentModel:a.currModel,universalConfig:a.universalConfig});if("generate"!==f||!a.sessionId)return;let g=(b=a.sessionId,c=a.comboName,`${b}::${c}`);if((d=E.get(g))&&Date.now()<d.retryAfter||A.has(g))return;A.add(g);let h=60*(a.universalConfig.ttlMinutes||300)*1e3;setImmediate(()=>{w({sessionId:a.sessionId,comboName:a.comboName,messages:a.messages,prevModel:a.prevModel||"unknown",currModel:a.currModel,handoffModel:a.universalConfig.handoffModel||a.currModel,ttlMs:h,maxMessages:a.universalConfig.maxMessagesForSummary,relayMode:a.universalConfig.relayMode,providerAllowlist:a.universalConfig.providerAllowlist,handleSingleModel:a.handleSingleMode
+
+--- connectionId @2967 ---
+)}catch(b){c.warn?.("COMBO",`Tag routing failed to load connections for provider=${a}: ${b instanceof Error?b.message:String(b)}`),g.set(a,[])}}));let h=a.reduce((a,b)=>{let c=b.providerId||b.provider,f=(g.get(c)?.filter(a=>{let c="string"==typeof a.id&&a.id.trim().length>0?a.id:null;return!!c&&(!b.connectionId||c===b.connectionId)})||[]).filter(a=>(0,q.RG)((0,q.WL)(a.providerSpecificData),d,e)).map(a=>a.id).filter(a=>"string"==typeof a);if(0===f.length)return a;if(b.connectionId)return a.push(b),a;let h=Array.from(new Set(f)),i=Array.isArray(b.allowedConnectionIds)?b.allowedConnectionIds.filter(a=>"string"==typeof a&&a.length>0):null,j=i&&i.length>0?h.filter(a=>i.includes(a)):h;return 0===j.length||a.push({...b,allowedConnectionIds:j}),a},[]);return 0===h.length?(c.info?.("COMBO",`Tag routing matched 0/${a.length} targets for [${d.join(", ")}] (${e}); falling back to the full target set`),a):(c.info?.("COMBO",`Tag routing matched ${h.l
+
+--- connectionId @2987 ---
+"COMBO",`Tag routing failed to load connections for provider=${a}: ${b instanceof Error?b.message:String(b)}`),g.set(a,[])}}));let h=a.reduce((a,b)=>{let c=b.providerId||b.provider,f=(g.get(c)?.filter(a=>{let c="string"==typeof a.id&&a.id.trim().length>0?a.id:null;return!!c&&(!b.connectionId||c===b.connectionId)})||[]).filter(a=>(0,q.RG)((0,q.WL)(a.providerSpecificData),d,e)).map(a=>a.id).filter(a=>"string"==typeof a);if(0===f.length)return a;if(b.connectionId)return a.push(b),a;let h=Array.from(new Set(f)),i=Array.isArray(b.allowedConnectionIds)?b.allowedConnectionIds.filter(a=>"string"==typeof a&&a.length>0):null,j=i&&i.length>0?h.filter(a=>i.includes(a)):h;return 0===j.length||a.push({...b,allowedConnectionIds:j}),a},[]);return 0===h.length?(c.info?.("COMBO",`Tag routing matched 0/${a.length} targets for [${d.join(", ")}] (${e}); falling back to the full target set`),a):(c.info?.("COMBO",`Tag routing matched ${h.length}/${a.length} t
+
+--- currModel @78878 ---
+(H.relayOptions.sessionId,H.combo.name,M,O,L.connectionId??void 0),0===b&&a&&a!==M){let b=Array.isArray(H.body?.messages)&&H.body.messages.length>0?H.body.messages:Array.isArray(H.body?.input)?H.body.input:[];(0,j.XH)({sessionId:H.relayOptions.sessionId,comboName:H.combo.name,messages:b,prevModel:a,currModel:M,universalConfig:T,handleSingleModel:H.handleSingleModelWithTimeout})}(0,k.gl)(H.relayOptions.sessionId,H.combo.name,M,O,L.connectionId??void 0)}if("context-relay"===H.strategy&&H.relayOptions?.sessionId&&H.relayConfig&&(H.relayConfig.handoffProviders??[]).includes(O)&&"codex"===O){let a=(0,p.bb)(H.relayOptions.sessionId);if(a){let b=await (0,m.fetchCodexQuota)(a).catch(()=>null);if(b){let c=[b.windows?.session?.resetAt,b.windows?.weekly?.resetAt,b.resetAt].filter(a=>"string"==typeof a&&a.length>0).sort((a,b)=>a.localeCompare(b)),d=Array.isArray(H.body?.messages)&&H.body.messages.length>0?H.body.messages:Array.isArray(H.body?.input
+
+--- currModel @269292 ---
+son())}catch{return await a.clone().text().catch(()=>"")}}async function w(a){let b=n(Array.isArray(a.messages)?a.messages:[],a.maxMessages,a.relayMode),c=m(b);if(!c)return u("unavailable",a.comboName,"empty selected-message history"),"unavailable";let d=B.replace("{HISTORY}",c),f=a.handoffModel||a.currModel;if(a.providerAllowlist.length>0){let b=f.indexOf("/"),c=b>0?f.slice(0,b):"";if(c&&!a.providerAllowlist.includes(c))return"unavailable"}let g=await a.handleSingleModel({model:f,messages:[{role:"user",content:d}],stream:!1,max_tokens:800,temperature:.1,_omnirouteSkipContextRelay:!0,_omnirouteInternalRequest:"universal-handoff"},f);if(!g.ok){let b=`summary model call failed: status=${g.status} model=${f}`;return u("unavailable",a.comboName,b),"unavailable"}let h=await v(g),i=p(h);if(!i){let b=JSON.stringify(h.slice(0,200)),c=`model=${f} contentPreview=${b}`;return u("unparseable",a.comboName,c),"unparseable"}return(0,e.Wk)({sessionId:a
+
+========== OTHER BUILD CHUNKS ==========
+10240.js | connectionId
+10387.js | connectionId
+10523.js | connectionId
+1083.js | connectionId
+10877.js | connectionId
+11584.js | connectionId
+11623.js | connectionId
+11662.js | connectionId
+12284.js | connectionId
+12301.js | connectionId
+12718.js | connectionId
+13660.js | connectionId
+14048.js | connectionId
+14461.js | connectionId
+14509.js | connectionId
+14537.js | connectionId
+14778.js | connectionId
+1535.js | connectionId
+15791.js | connectionId
+15877.js | connectionId
+1642.js | connectionId
+16930.js | connectionId
+16947.js | connectionId
+16982.js | connectionId
+17201.js | connectionId
+17391.js | connectionId
+17629.js | connectionId
+17868.js | connectionId
+18356.js | connectionId
+18637.js | connectionId
+18876.js | connectionId
+18976.js | connectionId
+19103.js | connectionId
+19615.js | connectionId
+19681.js | connectionId
+20047.js | connectionId
+20286.js | connectionId
+20420.js | connectionId
+20924.js | connectionId
+20958.js | connectionId
+20972.js | connectionId
+21365.js | connectionId
+21538.js | connectionId
+21978.js | connectionId
+22021.js | connectionId
+22122.js | connectionId
+22152.js | connectionId
+22153.js | connectionId
+22214.js | connectionId
+22372.js | connectionId
+2238.js | connectionId
+22890.js | connectionId
+23461.js | connectionId
+23753.js | connectionId
+23805.js | connectionId
+25535.js | connectionId
+25651.js | connectionId
+2578.js | connectionId
+25945.js | connectionId
+26141.js | connectionId
+26652.js | connectionId
+26699.js | connectionId
+26929.js | connectionId
+26933.js | connectionId
+27034.js | connectionId
+2723.js | connectionId
+28706.js | connectionId
+28770.js | connectionId
+28809.js | connectionId
+29629.js | connectionId
+30261.js | connectionId
+30281.js | connectionId
+3093.js | connectionId
+3099.js | connectionId
+31537.js | connectionId
+31624.js | connectionId
+31960.js | connectionId
+32016.js | connectionId
+32080.js | connectionId
+32594.js | connectionId
+32620.js | connectionId
+32699.js | connectionId
+32833.js | connectionId
+32946.js | connectionId
+32948.js | fromAccount, universal-handoff, previousModel, currentModel, connectionId, currModel
+33109.js | connectionId
+33249.js | connectionId
+33371.js | connectionId
+33400.js | connectionId
+33640.js | connectionId
+33738.js | connectionId
+34711.js | connectionId
+35097.js | connectionId
+35246.js | connectionId
+35518.js | connectionId
+36148.js | connectionId
+36743.js | connectionId
+36827.js | connectionId
+3689.js | connectionId
+3697.js | connectionId
+37650.js | connectionId
+37907.js | connectionId
+37972.js | connectionId
+3812.js | connectionId
+38389.js | connectionId
+38393.js | connectionId
+38535.js | connectionId
+38544.js | connectionId
+38563.js | connectionId
+39080.js | connectionId
+3920.js | connectionId
+39365.js | connectionId
+39682.js | connectionId
+39824.js | connectionId
+39854.js | connectionId
+39891.js | connectionId
+39949.js | connectionId
+40010.js | connectionId
+40093.js | connectionId
+40220.js | connectionId
+40366.js | connectionId
+40566.js | connectionId
+40960.js | connectionId
+41044.js | connectionId
+4127.js | connectionId
+41770.js | connectionId
+41990.js | connectionId
+42974.js | connectionId
+43485.js | connectionId
+43796.js | connectionId
+44606.js | connectionId
+44944.js | connectionId
+45121.js | fromAccount, universal-handoff, previousModel, currentModel, connectionId, currModel
+45228.js | connectionId
+45506.js | connectionId
+45682.js | connectionId
+45703.js | connectionId
+46329.js | connectionId
+4699.js | connectionId
+4737.js | connectionId
+47723.js | connectionId
+4775.js | connectionId
+48352.js | connectionId
+48361.js | connectionId
+48464.js | connectionId
+48524.js | connectionId
+48542.js | connectionId
+48852.js | connectionId
+49153.js | connectionId
+49314.js | connectionId
+50078.js | connectionId
+50390.js | connectionId
+50496.js | connectionId
+51248.js | connectionId
+51434.js | connectionId
+51685.js | connectionId
+52848.js | connectionId
+53512.js | connectionId
+53811.js | connectionId
+53911.js | connectionId
+5435.js | connectionId
+54830.js | connectionId
+55047.js | connectionId
+55080.js | connectionId
+55661.js | connectionId
+55697.js | connectionId
+55793.js | connectionId
+56268.js | fromAccount, connectionId
+56567.js | connectionId
+56896.js | connectionId
+572.js | connectionId
+5721.js | connectionId
+57514.js | connectionId
+57790.js | connectionId
+58380.js | connectionId
+58508.js | connectionId
+58509.js | connectionId
+58677.js | connectionId
+58728.js | connectionId
+58967.js | connectionId
+58980.js | connectionId
+59022.js | connectionId
+5904.js | connectionId
+59040.js | connectionId
+59255.js | connectionId
+60028.js | connectionId
+60142.js | connectionId
+60976.js | connectionId
+61526.js | connectionId
+61676.js | connectionId
+61745.js | connectionId
+61850.js | connectionId
+62215.js | connectionId
+62393.js | connectionId
+6276.js | connectionId
+63210.js | connectionId
+63945.js | connectionId
+64093.js | connectionId
+64112.js | connectionId
+64223.js | connectionId
+65478.js | connectionId
+65521.js | connectionId
+6559.js | connectionId
+65613.js | connectionId
+65838.js | connectionId
+6608.js | connectionId
+66339.js | connectionId
+66582.js | connectionId
+66618.js | connectionId
+667.js | connectionId
+66854.js | connectionId
+67110.js | connectionId
+67372.js | connectionId
+67434.js | connectionId
+67883.js | connectionId
+68582.js | connectionId
+68659.js | connectionId
+68733.js | connectionId
+69576.js | connectionId
+69749.js | connectionId
+70118.js | connectionId
+70387.js | connectionId
+7055.js | connectionId
+70672.js | connectionId
+71108.js | connectionId
+7134.js | connectionId
+71880.js | connectionId
+72550.js | connectionId
+73042.js | connectionId
+73398.js | connectionId
+73559.js | connectionId
+7367.js | connectionId
+73950.js | connectionId
+74018.js | connectionId
+7412.js | connectionId
+76137.js | connectionId
+77020.js | connectionId
+77473.js | connectionId
+77819.js | connectionId
+77933.js | connectionId
+7808.js | connectionId
+78214.js | connectionId
+78298.js | connectionId
+79837.js | connectionId
+79846.js | connectionId
+80010.js | fromAccount, previousModel, connectionId
+80555.js | connectionId
+80798.js | connectionId
+81208.js | connectionId
+81255.js | connectionId
+81417.js | connectionId
+81707.js | connectionId
+83267.js | connectionId
+83412.js | connectionId
+8382.js | connectionId
+84297.js | connectionId
+8436.js | universal-handoff, connectionId
+85000.js | connectionId
+85065.js | connectionId
+85094.js | connectionId
+85207.js | connectionId
+85311.js | connectionId
+85938.js | connectionId
+86245.js | connectionId
+86515.js | connectionId
+86827.js | connectionId
+86963.js | connectionId
+87011.js | connectionId
+8775.js | connectionId
+87859.js | connectionId
+88137.js | currentModel, connectionId
+88220.js | connectionId
+88602.js | connectionId
+88710.js | connectionId
+88849.js | connectionId
+88852.js | connectionId
+89668.js | connectionId
+89715.js | connectionId
+90087.js | connectionId
+90519.js | connectionId
+90936.js | connectionId
+91126.js | connectionId
+91150.js | connectionId
+91363.js | connectionId
+92003.js | connectionId
+9266.js | connectionId
+93208.js | connectionId
+93812.js | connectionId
+94025.js | connectionId
+94635.js | connectionId
+95510.js | connectionId
+95759.js | connectionId
+96116.js | connectionId
+96118.js | connectionId
+97148.js | connectionId
+97557.js | connectionId
+97823.js | fromAccount, connectionId
+97948.js | connectionId
+98726.js | connectionId
+99119.js | connectionId
+99128.js | connectionId
+99397.js | connectionId
+99512.js | connectionId
+99834.js | connectionId
+[opc@litellm-gateway ~]$
