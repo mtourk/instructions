@@ -1,0 +1,1281 @@
+[opc@litellm-gateway OmniRoute-source]$
+cd /home/opc && python3 - <<'PY'
+from pathlib import Path
+import json
+
+root = Path("/home/opc/OmniRoute-source")
+if not root.is_dir():
+    print("ERROR: Source folder not found:", root)
+    raise SystemExit(1)
+
+print("=" * 70)
+print("1) SOURCE VERSION AND PACKAGE MANAGER")
+print("=" * 70)
+
+pkgfile = root / "package.json"
+if pkgfile.exists():
+    pkg = json.loads(pkgfile.read_text())
+    print("name:", pkg.get("name"))
+    print("version:", pkg.get("version"))
+    print("packageManager:", pkg.get("packageManager"))
+    print("\nScripts:")
+    for k, v in pkg.get("scripts", {}).items():
+        if any(x in k.lower() for x in ("test", "lint", "type", "check")):
+            print(f"  {k}: {v}")
+else:
+    print("ERROR: package.json not found")
+
+print("\nLockfiles:")
+for name in ("package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+             "bun.lockb", "bun.lock"):
+    p = root / name
+    if p.exists():
+        print(f"  {name}: present")
+
+def show_context(rel, terms, before=12, after=24):
+    p = root / rel
+    print("\n" + "=" * 70)
+    print("FILE:", rel)
+    print("=" * 70)
+    if not p.exists():
+        print("NOT FOUND")
+        return
+    lines = p.read_text(errors="replace").splitlines()
+    hits = []
+    for i, line in enumerate(lines):
+        if any(term.lower() in line.lower() for term in terms):
+            hits.append(i)
+    if not hits:
+        print("No matching lines found.")
+        return
+    ranges = []
+    for i in hits:
+        a, b = max(0, i-before), min(len(lines), i+after+1)
+        if ranges and a <= ranges[-1][1]:
+            ranges[-1] = (ranges[-1][0], max(ranges[-1][1], b))
+        else:
+            ranges.append((a, b))
+    for a, b in ranges:
+        print(f"\n--- lines {a+1}-{b} ---")
+        for j in range(a, b):
+            print(f"{j+1:5}: {lines[j]}")
+
+show_context(
+    "open-sse/services/combo/executeTargetAttempt.ts",
+    ["getLastSessionModel", "maybeGenerateUniversalHandoff",
+     "injectUniversalHandoffBody", "effectiveConnectionId",
+     "recordSessionModelUsage"],
+    before=18, after=28
+)
+
+PYint("\nRead-only inspection finished. No files were changed.")}")ff",,
+======================================================================
+1) SOURCE VERSION AND PACKAGE MANAGER
+======================================================================
+name: omniroute
+version: 3.8.51
+packageManager: None
+
+Scripts:
+  lint: eslint . --cache --cache-location .eslintcache --suppressions-location config/quality/eslint-suppressions.json
+  lint:json: node scripts/quality/run-eslint-json.mjs
+  lint:md: npx --yes markdownlint-cli2 "docs/**/*.md" "*.md" "!docs/i18n" "!docs/research"
+  lint:prose: vale docs
+  test: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 "tests/unit/dashboard/**/*.test.ts" && npm run test:unit:serial
+  test:unit: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 "tests/unit/dashboard/**/*.test.ts" && npm run test:unit:serial
+  test:unit:ci: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 "tests/unit/dashboard/**/*.test.ts" && npm run test:unit:serial
+  test:unit:ci:shard: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 --test-shard=$TEST_SHARD tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=4 --test-shard=$TEST_SHARD "tests/unit/dashboard/**/*.test.ts" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 --test-shard=$TEST_SHARD "tests/unit/serial/**/*.test.ts"
+  test:unit:fast: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-isolation=none tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-isolation=none "tests/unit/dashboard/**/*.test.ts" && npm run test:unit:serial
+  test:scoped: bash scripts/quality/test-scoped.sh
+  test:scoped:staged: bash scripts/quality/test-scoped.sh --staged
+  test:scoped:full: bash scripts/quality/test-scoped.sh --full
+  test:unit:shard: concurrently --kill-others-on-fail -n s1,s2 "npm:test:unit:shard:1" "npm:test:unit:shard:2"
+  test:unit:shard:1: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=10 --test-shard=1/2 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=10 --test-shard=1/2 "tests/unit/dashboard/**/*.test.ts" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 --test-shard=1/2 "tests/unit/serial/**/*.test.ts"
+  test:unit:shard:2: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=10 --test-shard=2/2 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=10 --test-shard=2/2 "tests/unit/dashboard/**/*.test.ts" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 --test-shard=2/2 "tests/unit/serial/**/*.test.ts"
+  test:bun:db: bun test tests/unit/db-adapters/bunSqliteAdapter.test.ts tests/unit/db-adapters/driverFactory.test.ts tests/unit/db-adapters/cliSqlite.test.mjs
+  test:plan3: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test tests/unit/plan3-p0.test.ts
+  test:fixes: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test tests/unit/fixes-p1.test.ts
+  test:security: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test tests/unit/security-fase01.test.ts
+  test:property: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --test --test-force-exit tests/unit/correctness/*.property.test.ts
+  check:cycles: node scripts/check/check-cycles.mjs
+  check:route-validation:t06: node scripts/check/check-route-validation.mjs
+  check:any-budget:t11: node scripts/check/check-t11-any-budget.mjs
+  check:docs-sync: node scripts/check/check-docs-sync.mjs
+  check:env-doc-sync: node scripts/check/check-env-doc-sync.mjs
+  check:docs-counts: node scripts/check/check-docs-counts-sync.mjs
+  check:deprecated-versions: node scripts/check/check-deprecated-versions.mjs
+  check:compression-budget: bun scripts/check/check-compression-budget.ts
+  check:router-eval: node --import tsx scripts/check/check-router-eval-regression.ts
+  check:doc-links: node scripts/check/check-doc-links.mjs
+  check:fabricated-docs: node scripts/check/check-fabricated-docs.mjs --strict
+  check:docs-frontmatter: node scripts/check/check-docs-frontmatter.mjs
+  check:docs-all: npm run check:docs-sync && npm run check:docs-frontmatter && npm run check:docs-counts && npm run check:env-doc-sync && npm run check:deprecated-versions && npm run check:doc-links && npm run check:fabricated-docs
+  i18n:check: node scripts/i18n/check-translation-drift.mjs
+  i18n:check-ui-coverage: node scripts/i18n/check-ui-keys-coverage.mjs
+  i18n:check-value-drift: node scripts/i18n/check-ui-value-drift.mjs
+  i18n:check-value-drift:warn: node scripts/i18n/check-ui-value-drift.mjs --warn
+  i18n:check-glossary: node scripts/i18n/check-glossary-consistency.mjs
+  i18n:check-glossary:ko: node scripts/i18n/check-glossary-consistency.mjs --locale=ko
+  i18n:check-ratio: node scripts/i18n/check-translation-ratio.mjs
+  i18n:check-ratio:update: node scripts/i18n/check-translation-ratio.mjs --update
+  check:native-deps: node scripts/check/check-native-deps.mjs
+  check:node-runtime: node --import tsx scripts/check/check-supported-node-runtime.ts
+  check:pack-artifact: node --import tsx scripts/build/validate-pack-artifact.ts
+  check:pack-boot: node scripts/check/check-pack-boot.mjs
+  check:install-upgrade: node scripts/check/check-install-upgrade.mjs
+  check:pack-policy: node --import tsx scripts/build/validate-pack-artifact.ts --policy-only
+  check:cli-i18n: node scripts/check/check-cli-i18n.mjs
+  check:openapi-coverage: node scripts/check/check-openapi-coverage.mjs
+  check:openapi-security-tiers: node scripts/check/check-openapi-security-tiers.mjs
+  check:model-lifecycle: node --import tsx/esm scripts/check/check-model-lifecycle.mjs
+  check:provider-consistency: bun scripts/check/check-provider-consistency.ts
+  check:provider-assets: node scripts/check/check-provider-assets.mjs
+  check:provider-order-sync: node scripts/check/check-provider-order-sync.mjs
+  check:provider-asset-provenance: node scripts/check/check-provider-asset-provenance.mjs
+  check:radar-sentinels: node scripts/check/check-radar-sentinels.mjs
+  check:nvidia-catalog-drift: node --import tsx/esm scripts/check/check-nvidia-catalog-drift.ts
+  check:cli-fingerprint-drift: node --import tsx/esm scripts/check/check-cli-fingerprint-drift.ts
+  check:fetch-targets: node scripts/check/check-fetch-targets.mjs
+  check:openapi-routes: node scripts/check/check-openapi-routes.mjs
+  check:api-docs-refs: node scripts/check/check-api-docs-refs.mjs
+  check:openapi-breaking: node scripts/check/check-openapi-breaking.mjs
+  check:deps: node scripts/check/check-deps.mjs
+  check:file-size: node scripts/check/check-file-size.mjs
+  check:duplication: node scripts/check/check-duplication.mjs
+  check:tracked-artifacts: node scripts/check/check-tracked-artifacts.mjs
+  check:ai-attribution: node scripts/check/check-ai-attribution.mjs
+  check:test-masking: node scripts/check/check-test-masking.mjs
+  check:test-runner-api: node scripts/check/check-test-runner-api.mjs
+  check:changelog-integrity: node scripts/check/check-changelog-integrity.mjs
+  check:agent-skills-sync: node --import tsx/esm scripts/skills/generate-agent-skills.mjs
+  check:build-scope: node scripts/check/check-build-scope.mjs
+  check:error-helper: node scripts/check/check-error-helper.mjs
+  check:routing-error-guard: node scripts/check/check-routing-error-guard.mjs
+  check:migration-numbering: node scripts/check/check-migration-numbering.mjs
+  check:public-creds: node scripts/check/check-public-creds.mjs
+  check:db-rules: node scripts/check/check-db-rules.mjs
+  check:docs-symbols: node scripts/check/check-docs-symbols.mjs
+  check:known-symbols: bun scripts/check/check-known-symbols.ts
+  check:route-guard-membership: node --import tsx scripts/check/check-route-guard-membership.ts
+  check:test-discovery: node scripts/check/check-test-discovery.mjs
+  check:forgotten-sibling-tests: node scripts/check/check-forgotten-sibling-tests.mjs
+  check:mutation-test-coverage: node scripts/check/check-mutation-test-coverage.mjs --strict
+  check:complexity: node scripts/check/check-complexity.mjs
+  check:dead-code: node scripts/check/check-dead-code.mjs
+  check:cognitive-complexity: node scripts/check/check-cognitive-complexity.mjs
+  check:complexity-ratchets: node scripts/check/check-complexity-ratchets.mjs
+  check:release-green: node scripts/quality/validate-release-green.mjs
+  check:ratchet-bank: node scripts/quality/verify-ratchet-bank.mjs
+  check:type-coverage: node scripts/check/check-type-coverage.mjs
+  check:lockfile: node scripts/check/check-lockfile.mjs
+  check:bundle-size: node scripts/check/check-bundle-size.mjs
+  check:circular-deps: node scripts/check/check-circular-deps.mjs
+  check:mutation-ratchet: node scripts/check/check-mutation-ratchet.mjs
+  check:rtl-ratchet: node scripts/check/check-rtl-ratchet.mjs
+  check:licenses: node scripts/check/check-licenses.mjs
+  check:pr-evidence: node scripts/check/check-pr-evidence.mjs
+  check:vuln-ratchet: node scripts/check/check-vuln-ratchet.mjs
+  check:codeql-ratchet: node scripts/check/check-codeql-ratchet.mjs
+  check:secrets: node scripts/check/check-secrets.mjs
+  check:workflows: node scripts/check/check-workflows.mjs
+  typecheck:core: tsc --pretty false -p tsconfig.typecheck-core.json
+  typecheck:noimplicit:core: tsc --pretty false -p tsconfig.typecheck-noimplicit-core.json
+  check:dashboard-typecheck: node scripts/check/check-dashboard-typecheck.mjs
+  check:open-sse-typecheck: node scripts/check/check-open-sse-typecheck.mjs
+  check:ts7-diagnostics-ratchet: node scripts/check/check-ts7-diagnostics-ratchet.mjs
+  test:integration: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 tests/integration/*.test.ts "tests/integration/combo-matrix/*.test.ts"
+  test:integration:ci: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 --test-shard=$TEST_SHARD tests/integration/*.test.ts "tests/integration/combo-matrix/*.test.ts"
+  test:combo:matrix: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 "tests/integration/combo-matrix/*.test.ts"
+  test:combo:live: cross-env RUN_COMBO_LIVE=1 DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 "tests/integration/combo-live/*.live.test.ts"
+  test:combo:live:vps: node scripts/test/combo-live-vps.mjs
+  test:combo:live:vps:failover: node scripts/test/combo-live-vps.mjs --failover
+  test:boundary:live: cross-env RUN_BOUNDARY_LIVE=1 DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 "tests/boundary/*.live.test.ts"
+  test:heap: node --expose-gc --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit tests/integration/heap-growth.test.ts
+  test:chaos: cross-env RUN_CHAOS_INT=1 node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 tests/integration/resilience-chaos.test.ts
+  test:e2e: node scripts/dev/run-playwright-tests.mjs test tests/e2e/*.spec.ts
+  test:protocols:e2e: node scripts/dev/run-protocol-clients-tests.mjs
+  test:vitest: vitest run --config vitest.mcp.config.ts
+  test:vitest:ui: vitest run --config vitest.config.ts
+  test:mutation: stryker run
+  test:ecosystem: node scripts/dev/run-ecosystem-tests.mjs
+  test:system: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 tests/e2e/system-failover.test.ts
+  pretest:coverage: rm -rf coverage
+  test:coverage: cross-env DISABLE_SQLITE_AUTO_BACKUP=true NODE_OPTIONS=--max-old-space-size=8192 c8 --merge-async --output-dir coverage --exclude=tests/** --exclude=**/*.test.* --reporter=text-summary --reporter=html --reporter=json-summary --reporter=lcov --check-coverage --statements 60 --lines 60 --functions 60 --branches 60 npm run test:coverage:runner
+  test:coverage:legacy: c8 --output-dir coverage --exclude=open-sse --check-coverage --lines 50 --functions 50 --branches 50 node --import tsx/esm --test tests/unit/*.test.ts
+  check:pr-test-policy: node scripts/check/check-pr-test-policy.mjs
+  check:pricing-freshness: node scripts/check/check-pricing-freshness.mjs
+  test:all: npm run test:unit && npm run test:vitest && npm run test:vitest:ui && npm run test:ecosystem && npm run test:e2e
+  check: npm run lint && npm run test
+  test:coverage:runner: node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=8 tests/unit/*.test.ts "tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,translator,ui,usage}/**/*.test.ts" "tests/unit/**/*.test.mjs" && cross-env DISABLE_SQLITE_AUTO_BACKUP=true NODE_OPTIONS=--max-old-space-size=8192 c8 --merge-async --output-dir coverage --exclude=tests/** --exclude=**/*.test.* --reporter=text-summary --reporter=html --reporter=json-summary --reporter=lcov --check-coverage --statements 60 --lines 60 --functions 60 --branches 60 node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=8 "tests/unit/dashboard/**/*.test.ts" && npm run test:unit:serial
+  test:unit:serial: cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 "tests/unit/serial/**/*.test.ts"
+  check:vitest-exclusions: node scripts/check/check-vitest-exclusions.mjs
+  i18n:check-new-keys: node scripts/i18n/check-new-key-coverage.mjs
+  i18n:check-keys: node scripts/i18n/check-key-completeness.mjs
+  i18n:check-keys:cli: node scripts/i18n/check-key-completeness.mjs --catalog=cli
+
+Lockfiles:
+  package-lock.json: present
+
+======================================================================
+FILE: open-sse/services/combo/executeTargetAttempt.ts
+======================================================================
+
+--- lines 17-71 ---
+   17:   recordProviderSuccess,
+   18:   selectLockoutCooldownMs,
+   19: } from "../accountFallback.ts";
+   20: import {
+   21:   errorResponse,
+   22:   errorResponseWithComboDiagnostics,
+   23:   logRetryHintUnreadable,
+   24:   parseRetryAfterHeader,
+   25:   readProseRetryAfter,
+   26: } from "../../utils/error.ts";
+   27: import { recordComboFailure, clearComboFailureTracking } from "./failureTracker.ts";
+   28: import { recordComboRequest, getComboMetrics } from "../comboMetrics.ts";
+   29: import {
+   30:   expandComboSystemPromptIfPresent,
+   31:   resolveTargetFingerprint,
+   32: } from "../comboAgentMiddleware.ts";
+   33: import {
+   34:   maybeGenerateHandoff,
+   35:   maybeGenerateUniversalHandoff,
+   36:   injectUniversalHandoffBody,
+   37:   SKIP_UNIVERSAL_HANDOFF_FLAG,
+   38:   DEFAULT_UNIVERSAL_HANDOFF_CONFIG,
+   39:   type MessageLike,
+   40: } from "../contextHandoff.ts";
+   41: import {
+   42:   recordSessionModelUsage,
+   43:   getLastSessionModel,
+   44:   getHandoff,
+   45: } from "../../../src/lib/db/contextHandoffs.ts";
+   46: import { resolveModelLockoutSettings } from "../../../src/lib/resilience/modelLockoutSettings";
+   47: import { fetchCodexQuota } from "../codexQuotaFetcher.ts";
+   48: import { emit } from "../../../src/lib/events/eventBus";
+   49: import { notifyWebhookEvent } from "../../../src/lib/webhookDispatcher";
+   50: import { getSessionConnection } from "../sessionManager.ts";
+   51: import { recordStickyBinding } from "./sessionStickiness.ts";
+   52: import { recordStickyWeightedSuccess } from "./rrState.ts";
+   53: import { resolveReasoningBufferedMaxTokens, toPositiveInteger } from "../reasoningTokenBuffer.ts";
+   54: import { parseModel } from "../model.ts";
+   55: import type { ProviderProfile } from "../accountFallback.ts";
+   56: import {
+   57:   MAX_FALLBACK_WAIT_MS,
+   58:   classifyQualityFailure,
+   59:   clampGlobalAttempts,
+   60:   shouldSkipForPredictedTtft,
+   61:   shouldRecordProviderBreakerFailure,
+   62:   isComboRequestScopedFailure as isScopedFailure,
+   63:   isStreamReadinessFailureErrorBody,
+   64:   isStreamEarlyEofErrorBody,
+   65:   isLocalKeyPolicyBreachErrorBody,
+   66:   isLocalQueueCapacityErrorBody,
+   67:   toRecordedTarget,
+   68:   resolveDelayMs,
+   69:   resolvePersistedConnectionCooldownSkipReason,
+   70:   isModelScoped400,
+   71:   requestScopedReplayKey,
+
+--- lines 289-338 ---
+  289:           attemptBody = compressionResult.body;
+  290:         }
+  291:       }
+  292:     }
+  293:
+  294:     // Universal handoff: inject on model change only when i === 0. A fallback
+  295:     // target (i > 0) serves the SAME client request the failed primary target
+  296:     // would have served, with the original messages already intact -- there is
+  297:     // nothing to hand off, since the client never saw the earlier target fail.
+  298:     // Injecting a handoff note there replaces real context with a context-free
+  299:     // note, which weaker fallback models have been observed treating as license
+  300:     // to fabricate content instead of answering the request (#12227 follow-up).
+  301:     if (
+  302:       i === 0 &&
+  303:       universalHandoffConfig.enabled &&
+  304:       deps.relayOptions?.sessionId &&
+  305:       !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+  306:     ) {
+  307:       const lastModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+  308:       if (lastModel && lastModel !== modelStr) {
+  309:         const existingHandoff = getHandoff(deps.relayOptions.sessionId, deps.combo.name);
+  310:         attemptBody = injectUniversalHandoffBody(
+  311:           attemptBody, // Use the cloned body to maintain isolation
+  312:           lastModel,
+  313:           modelStr,
+  314:           `Model routing: ${lastModel} → ${modelStr}`,
+  315:           existingHandoff,
+  316:           universalHandoffConfig.relayMode,
+  317:           deps.sourceFormat
+  318:         );
+  319:       }
+  320:     }
+  321:
+  322:     // Issue #3587: Reasoning models can spend the whole output budget on
+  323:     // reasoning. Only add headroom when the complete buffer fits inside the
+  324:     // model's known output cap; otherwise preserve the client's explicit limit.
+  325:     {
+  326:       const bodyRecord = attemptBody as Record<string, unknown>;
+  327:       const currentMaxTokens = toPositiveInteger(bodyRecord.max_tokens);
+  328:       const bufferedMaxTokens = resolveReasoningBufferedMaxTokens(modelStr, bodyRecord.max_tokens, {
+  329:         enabled: deps.reasoningTokenBufferEnabled !== false,
+  330:       });
+  331:       if (currentMaxTokens !== null && bufferedMaxTokens !== null) {
+  332:         bodyRecord.max_tokens = bufferedMaxTokens;
+  333:         if (bufferedMaxTokens !== currentMaxTokens) {
+  334:           deps.log.info(
+  335:             "COMBO",
+  336:             `Reasoning model ${modelStr}: adjusted max_tokens ${currentMaxTokens} -> ${bufferedMaxTokens}`
+  337:           );
+  338:         }
+
+--- lines 356-429 ---
+  356:       recordComboDecision(deps.traceInvocationId, {
+  357:         step: target.executionKey,
+  358:         target: modelStr,
+  359:         decision: "dispatched",
+  360:       });
+  361:     }
+  362:     const result = await deps.handleSingleModelWithTimeout(attemptBody, modelStr, {
+  363:       ...targetForAttempt,
+  364:       effectiveComboStrategy: deps.strategy,
+  365:       failoverBeforeRetry: deps.config.failoverBeforeRetry,
+  366:     });
+  367:
+  368:     // Success — validate response quality before returning
+  369:     if (result.ok) {
+  370:       const selectedConnectionId =
+  371:         result.headers?.get("X-OmniRoute-Selected-Connection-Id") ||
+  372:         result.headers?.get("x-omniroute-selected-connection-id") ||
+  373:         undefined;
+  374:       const effectiveConnectionId = selectedConnectionId || target.connectionId || "";
+  375:
+  376:       // Clone BEFORE quality check — validateResponseQuality reads the body
+  377:       // via getReader() which locks the stream. The clone's body is consumed
+  378:       // by the quality check; the original stays unlocked for piping.
+  379:       let qualityClone: Response;
+  380:       try {
+  381:         qualityClone = result.clone();
+  382:       } catch {
+  383:         qualityClone = result;
+  384:       }
+  385:       const quality = await validateResponseQuality(
+  386:         qualityClone,
+  387:         deps.clientRequestedStream,
+  388:         deps.log,
+  389:         deps.config.responseValidation as ResponseValidationConfig | null | undefined
+  390:       );
+  391:       releaseQualityClone(qualityClone, result, quality);
+  392:       if (!quality.valid) {
+  393:         releaseRejectedQualityResponse(qualityClone, result);
+  394:         deps.log.warn(
+  395:           "COMBO",
+  396:           `Model ${modelStr} returned 200 but failed quality check: ${quality.reason}`
+  397:         );
+  398:         // #6692: a quality-rejected 200 never marks the connection row
+  399:         // unhealthy, so the sticky pin's lazy headroom recheck would never
+  400:         // catch it either — release it here, on the failing response.
+  401:         deps.releaseStickyPinOnFailure(deps.sticky.messageHash, effectiveConnectionId);
+  402:         recordComboRequest(deps.combo.name, modelStr, {
+  403:           success: false,
+  404:           latencyMs: Date.now() - deps.startTime,
+  405:           fallbackCount: state.fallbackCount,
+  406:           strategy: deps.strategy,
+  407:           target: toRecordedTarget(target),
+  408:         });
+  409:         state.recordedAttempts++;
+  410:         // Fix #1707: Set terminal state so the fallback doesn't emit
+  411:         // misleading ALL_ACCOUNTS_INACTIVE when the real issue is quality.
+  412:         const qualityFailure = classifyQualityFailure(quality);
+  413:         state.lastError = `Upstream response failed quality validation: ${quality.reason}`;
+  414:         state.lastStatus = qualityFailure.status;
+  415:         // #10314: record quality failures as a FIRST-CLASS per-target outcome
+  416:         // so a quality reason is never silently dropped from the aggregated
+  417:         // terminal message when a later sibling overwrites lastError.
+  418:         state.comboErrors.push({
+  419:           model: modelStr,
+  420:           status: qualityFailure.status,
+  421:           error: quality.reason || "upstream response failed quality validation",
+  422:           kind: qualityFailure.kind,
+  423:         });
+  424:         if (i > 0) state.fallbackCount++;
+  425:         state.requestScopedFailureSeen ||= qualityFailure.requestScoped;
+  426:         if (qualityFailure.requestScoped)
+  427:           state.requestScopedRejectedModelKeys?.add(requestScopedReplayKey(modelStr));
+  428:         if (provider && rawModel && !qualityFailure.requestScoped) {
+  429:           const mlSettings = resolveModelLockoutSettings(deps.settings);
+
+--- lines 441-638 ---
+  441:                 maxCooldownMs: mlSettings.maxCooldownMs,
+  442:               }
+  443:             );
+  444:           }
+  445:         }
+  446:         emit("combo.target.failed", {
+  447:           comboName: deps.combo.name,
+  448:           targetIndex: i,
+  449:           provider,
+  450:           model: modelStr,
+  451:           error: `Quality: ${quality.reason}`,
+  452:           latencyMs: Date.now() - deps.startTime,
+  453:         });
+  454:         state.observeFailure(false, target.executionKey);
+  455:         if (handlePreContentStreamRetry(quality, retry, deps, modelStr)) continue;
+  456:         return protectedPriorityTarget ? qualityValidationFailure(quality) : null;
+  457:       }
+  458:
+  459:       if (Boolean(deps.clientManagedResponsesContext) && effectiveConnectionId) {
+  460:         if (deps.nativeCodexAutoResume) {
+  461:           const nextGen = advanceNativeCodexTurnGeneration(deps.body, deps.combo.name);
+  462:           deps.log.info(
+  463:             "COMBO",
+  464:             `Native Codex auto-resume routed: new provider/model=${target.modelStr} on connection ${effectiveConnectionId.slice(0, 8)} (logical turn generation ${nextGen})`
+  465:           );
+  466:           pinNativeCodexTurn({
+  467:             body: deps.body,
+  468:             comboName: deps.combo.name,
+  469:             target,
+  470:             connectionId: effectiveConnectionId,
+  471:             generation: nextGen ?? undefined,
+  472:           });
+  473:         } else {
+  474:           pinNativeCodexTurn({
+  475:             body: deps.body,
+  476:             comboName: deps.combo.name,
+  477:             target,
+  478:             connectionId: effectiveConnectionId,
+  479:           });
+  480:         }
+  481:       }
+  482:
+  483:       // Success decay: a healthy response walks the model's lockout failure
+  484:       // count back down (and eventually clears an expired lockout entirely).
+  485:       if (provider && rawModel) {
+  486:         const dcResult = decayModelFailureCount(provider, effectiveConnectionId, rawModel);
+  487:         if (dcResult.cleared) {
+  488:           deps.log.info("COMBO", `Model ${modelStr} fully recovered — lockout cleared`);
+  489:         } else if (dcResult.newFailureCount > 0) {
+  490:           deps.log.debug(
+  491:             "COMBO",
+  492:             `Model ${modelStr} decayed to failureCount=${dcResult.newFailureCount}`
+  493:           );
+  494:         }
+  495:       }
+  496:
+  497:       const latencyMs = Date.now() - deps.startTime;
+  498:       emit("combo.target.succeeded", {
+  499:         comboName: deps.combo.name,
+  500:         targetIndex: i,
+  501:         provider,
+  502:         model: modelStr,
+  503:         latencyMs,
+  504:       });
+  505:       deps.log.info(
+  506:         "COMBO",
+  507:         `Model ${modelStr} succeeded (${latencyMs}ms, ${state.fallbackCount} fallbacks)`
+  508:       );
+  509:       recordComboRequest(deps.combo.name, modelStr, {
+  510:         success: true,
+  511:         latencyMs,
+  512:         fallbackCount: state.fallbackCount,
+  513:         strategy: deps.strategy,
+  514:         target: toRecordedTarget(target),
+  515:       });
+  516:       state.recordedAttempts++;
+  517:
+  518:       // Reset cooldown on success
+  519:       if (provider && provider !== "unknown") {
+  520:         recordProviderSuccess(provider, effectiveConnectionId || undefined);
+  521:       }
+  522:       if (deps.strategy === "weighted" && (deps.stickyWeightedLimit ?? 0) > 1) {
+  523:         const stickySuccessKey = deps.getWeightedStepKeyForTarget?.(target);
+  524:         if (stickySuccessKey) {
+  525:           recordStickyWeightedSuccess(
+  526:             deps.combo.name,
+  527:             stickySuccessKey,
+  528:             deps.stickyWeightedLimit ?? 0
+  529:           );
+  530:         }
+  531:       }
+  532:       // Webhook fan-out: best-effort, never blocks the response stream.
+  533:       notifyWebhookEvent("request.completed", {
+  534:         combo: deps.combo.name,
+  535:         provider,
+  536:         model: modelStr,
+  537:         account:
+  538:           typeof target.label === "string" && target.label.trim().length > 0
+  539:             ? target.label.trim()
+  540:             : "",
+  541:         accountId: effectiveConnectionId ?? "",
+  542:         latencyMs,
+  543:         fallbackCount: state.fallbackCount,
+  544:       });
+  545:
+  546:       // Silent-stop fix: reset the consecutive-failure counter for this session-combo pair
+  547:       // on every successful dispatch so a transient recovery doesn't get "credited" against
+  548:       // the threshold the user already paid through to clear the stale pin.
+  549:       if (deps.effectiveSessionId) {
+  550:         clearComboFailureTracking(deps.effectiveSessionId, deps.combo.name);
+  551:       }
+  552:       // Context cache pinning: record model usage for session-based pinning
+  553:       // (independent of universal handoff — always fires when context_cache_protection is on)
+  554:       // #3825: write under the SAME effectiveSessionId used by the read site so a
+  555:       // sessionless conversation re-pins to this model on its next turn.
+  556:       if (
+  557:         deps.combo.context_cache_protection &&
+  558:         deps.effectiveSessionId &&
+  559:         !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+  560:       ) {
+  561:         recordSessionModelUsage(
+  562:           deps.effectiveSessionId,
+  563:           deps.combo.name,
+  564:           modelStr,
+  565:           provider,
+  566:           target.connectionId ?? undefined
+  567:         );
+  568:       }
+  569:
+  570:       // Universal handoff: record model usage for session
+  571:       if (
+  572:         universalHandoffConfig.enabled &&
+  573:         deps.relayOptions?.sessionId &&
+  574:         !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+  575:       ) {
+  576:         const prevModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+  577:         recordSessionModelUsage(
+  578:           deps.relayOptions.sessionId,
+  579:           deps.combo.name,
+  580:           modelStr,
+  581:           provider,
+  582:           target.connectionId ?? undefined
+  583:         );
+  584:         // i === 0 only: a same-request fallback target (i > 0) never
+  585:         // needs a summary generated for it -- see the injection-site
+  586:         // comment above. recordSessionModelUsage above stays
+  587:         // unconditional regardless of i: it must reflect whichever
+  588:         // model actually served THIS response, since the next
+  589:         // request's i === 0 comparison depends on that being
+  590:         // accurate even when this response came from a fallback.
+  591:         if (i === 0 && prevModel && prevModel !== modelStr) {
+  592:           const handoffSourceMessages =
+  593:             Array.isArray(deps.body?.messages) && deps.body.messages.length > 0
+  594:               ? deps.body.messages
+  595:               : Array.isArray(deps.body?.input)
+  596:                 ? deps.body.input
+  597:                 : [];
+  598:
+  599:           maybeGenerateUniversalHandoff({
+  600:             sessionId: deps.relayOptions.sessionId,
+  601:             comboName: deps.combo.name,
+  602:             messages: handoffSourceMessages as MessageLike[],
+  603:             prevModel,
+  604:             currModel: modelStr,
+  605:             universalConfig: universalHandoffConfig,
+  606:             handleSingleModel: deps.handleSingleModelWithTimeout,
+  607:           });
+  608:         }
+  609:
+  610:         recordSessionModelUsage(
+  611:           deps.relayOptions.sessionId,
+  612:           deps.combo.name,
+  613:           modelStr,
+  614:           provider,
+  615:           target.connectionId ?? undefined
+  616:         );
+  617:       }
+  618:       // Context-relay intentionally splits responsibilities:
+  619:       // combo.ts decides whether a successful turn should generate a handoff,
+  620:       // while chat.ts injects the handoff after the real connectionId is resolved.
+  621:       if (
+  622:         deps.strategy === "context-relay" &&
+  623:         deps.relayOptions?.sessionId &&
+  624:         deps.relayConfig &&
+  625:         (deps.relayConfig.handoffProviders ?? []).includes(provider) &&
+  626:         provider === "codex"
+  627:       ) {
+  628:         const connectionId = getSessionConnection(deps.relayOptions.sessionId);
+  629:         if (connectionId) {
+  630:           const quotaInfo = await fetchCodexQuota(connectionId).catch(() => null);
+  631:           if (quotaInfo) {
+  632:             const resetCandidates = [
+  633:               quotaInfo.windows?.session?.resetAt,
+  634:               quotaInfo.windows?.weekly?.resetAt,
+  635:               quotaInfo.resetAt,
+  636:             ]
+  637:               .filter((value): value is string => typeof value === "string" && value.length > 0)
+  638:               .sort((a, b) => a.localeCompare(b));
+
+--- lines 645-691 ---
+  645:
+  646:             maybeGenerateHandoff({
+  647:               sessionId: deps.relayOptions.sessionId,
+  648:               comboName: deps.combo.name,
+  649:               connectionId,
+  650:               percentUsed: quotaInfo.percentUsed,
+  651:               messages: handoffSourceMessages,
+  652:               model: modelStr,
+  653:               expiresAt: resetCandidates[0] || null,
+  654:               config: deps.relayConfig,
+  655:               handleSingleModel: deps.handleSingleModelWithTimeout,
+  656:             });
+  657:           }
+  658:         }
+  659:       }
+  660:       if (deps.sticky.messageHash && target.connectionId)
+  661:         recordStickyBinding(deps.sticky.messageHash, target.connectionId); // LKGP (#919):
+  662:       if (provider) {
+  663:         const connId = effectiveConnectionId || undefined;
+  664:         recordLkgpPin({
+  665:           comboName: deps.combo.name,
+  666:           executionKey: target.executionKey,
+  667:           comboId: deps.combo.id,
+  668:           provider,
+  669:           connectionId: connId,
+  670:           log: deps.log,
+  671:           tag: "COMBO",
+  672:         });
+  673:       }
+  674:
+  675:       return { ok: true, response: result };
+  676:     }
+  677:
+  678:     // Extract error info from response
+  679:     let errorText = result.statusText || "";
+  680:     let errorBody: ComboErrorBody = null;
+  681:     let retryAfter: ComboRetryAfter | null = null;
+  682:     let bodyText = "";
+  683:     try {
+  684:       const cloned = result.clone();
+  685:       try {
+  686:         const text = await cloned.text();
+  687:         bodyText = text;
+  688:         if (text) {
+  689:           errorText = text.substring(0, 500);
+  690:           errorBody = JSON.parse(text);
+  691:           const parsedError = errorBody?.error;
+
+======================================================================
+FILE: src/lib/db/contextHandoffs.ts
+======================================================================
+
+--- lines 110-162 ---
+  110:     payload.taskProgress,
+  111:     JSON.stringify(payload.activeEntities || []),
+  112:     payload.messageCount,
+  113:     payload.model,
+  114:     payload.lastModel || null,
+  115:     payload.warningThresholdPct,
+  116:     payload.generatedAt,
+  117:     payload.expiresAt,
+  118:     createdAt
+  119:   );
+  120: }
+  121:
+  122: export function getHandoff(sessionId: string, comboName: string): HandoffPayload | null {
+  123:   const db = getDbInstance() as unknown as DbLike;
+  124:   const now = new Date().toISOString();
+  125:   const row = db
+  126:     .prepare(
+  127:       `SELECT *
+  128:        FROM context_handoffs
+  129:        WHERE session_id = ? AND combo_name = ? AND expires_at > ?
+  130:        ORDER BY created_at DESC
+  131:        LIMIT 1`
+  132:     )
+  133:     .get(sessionId, comboName, now);
+  134:
+  135:   return toHandoffPayload(row);
+  136: }
+  137:
+  138: export function deleteHandoff(sessionId: string, comboName: string): void {
+  139:   const db = getDbInstance() as unknown as DbLike;
+  140:   db.prepare("DELETE FROM context_handoffs WHERE session_id = ? AND combo_name = ?").run(
+  141:     sessionId,
+  142:     comboName
+  143:   );
+  144: }
+  145:
+  146: export function cleanupExpiredHandoffs(): number {
+  147:   const nowMs = Date.now();
+  148:   if (nowMs - lastCleanupAt < CLEANUP_THROTTLE_MS) {
+  149:     return 0;
+  150:   }
+  151:
+  152:   const db = getDbInstance() as unknown as DbLike;
+  153:   const now = new Date(nowMs).toISOString();
+  154:   const result = db.prepare("DELETE FROM context_handoffs WHERE expires_at <= ?").run(now);
+  155:   lastCleanupAt = nowMs;
+  156:   return result.changes;
+  157: }
+  158:
+  159: export function hasActiveHandoff(sessionId: string, comboName: string): boolean {
+  160:   const db = getDbInstance() as unknown as DbLike;
+  161:   const now = new Date().toISOString();
+  162:   const row = db
+
+--- lines 171-256 ---
+  171:   return !!row;
+  172: }
+  173: /**
+  174:  * Record a model usage entry for a session/combo combination.
+  175:  * Used by context-relay to track which models have been active.
+  176:  *
+  177:  * @param sessionId - The session identifier.
+  178:  * @param comboName - The combo name.
+  179:  * @param modelStr - The model string (e.g. "claude-sonnet-4-20250514").
+  180:  * @param provider - The provider identifier.
+  181:  * @param connectionId - Optional connection ID used.
+  182:  */
+  183: export function recordSessionModelUsage(
+  184:   sessionId: string,
+  185:   comboName: string,
+  186:   modelStr: string,
+  187:   provider: string,
+  188:   connectionId?: string
+  189: ): void {
+  190:   const db = getDbInstance() as unknown as DbLike;
+  191:   db.prepare(
+  192:     `INSERT INTO session_model_history
+  193:       (session_id, combo_name, model_str, provider, connection_id)
+  194:      VALUES (?, ?, ?, ?, ?)`
+  195:   ).run(sessionId, comboName, modelStr, provider, connectionId || null);
+  196: }
+  197:
+  198: /**
+  199:  * Get the most recently used model for a session/combo combination.
+  200:  * Returns null if no usage has been recorded.
+  201:  *
+  202:  * @param sessionId - The session identifier.
+  203:  * @param comboName - The combo name.
+  204:  * @returns The model string, or null if no record exists.
+  205:  */
+  206: export function getLastSessionModel(sessionId: string, comboName: string): string | null {
+  207:   const db = getDbInstance() as unknown as DbLike;
+  208:   const row = db
+  209:     .prepare(
+  210:       `SELECT model_str
+  211:        FROM session_model_history
+  212:        WHERE session_id = ? AND combo_name = ?
+  213:        ORDER BY used_at DESC, id DESC
+  214:        LIMIT 1`
+  215:     )
+  216:     .get(sessionId, comboName) as { model_str: string } | undefined;
+  217:
+  218:   return row?.model_str ?? null;
+  219: }
+  220:
+  221: /**
+  222:  * Clear all session model history entries for a given combo name.
+  223:  * Called when a combo's model targets are changed to invalidate stale context-cache pins.
+  224:  *
+  225:  * @param comboName - The combo name whose pins should be cleared.
+  226:  * @returns The number of deleted entries.
+  227:  */
+  228: export function clearSessionModelHistoryForCombo(comboName: string): number {
+  229:   const db = getDbInstance() as unknown as DbLike;
+  230:   const result = db
+  231:     .prepare("DELETE FROM session_model_history WHERE combo_name = ?")
+  232:     .run(comboName);
+  233:   return result.changes ?? 0;
+  234: }
+  235:
+  236: /**
+  237:  * Clear the session model history pin for ONE session on a given combo, leaving
+  238:  * every other session's pin on that same combo untouched.
+  239:  *
+  240:  * Unlike clearSessionModelHistoryForCombo() (combo-wide — used when the combo's
+  241:  * model targets themselves change and every pin is stale), this is the
+  242:  * session-scoped variant used by the consecutive-failure auto-clear path
+  243:  * (open-sse/services/combo/failureTracker.ts::recordComboFailure), where only
+  244:  * the failing session's pin should be dropped.
+  245:  *
+  246:  * @param sessionId - The session identifier whose pin should be cleared.
+  247:  * @param comboName - The combo name.
+  248:  * @returns The number of deleted entries.
+  249:  */
+  250: export function deleteSessionModelHistory(sessionId: string, comboName: string): number {
+  251:   const db = getDbInstance() as unknown as DbLike;
+  252:   const result = db
+  253:     .prepare("DELETE FROM session_model_history WHERE session_id = ? AND combo_name = ?")
+  254:     .run(sessionId, comboName);
+  255:   return result.changes ?? 0;
+  256: }
+
+======================================================================
+FILE: open-sse/services/contextHandoff.ts
+======================================================================
+
+--- lines 1-27 ---
+    1: import {
+    2:   cleanupExpiredHandoffs,
+    3:   getHandoff,
+    4:   hasActiveHandoff,
+    5:   type HandoffPayload,
+    6:   upsertHandoff,
+    7: } from "../../src/lib/db/contextHandoffs.ts";
+    8: import { estimateTokens } from "./contextManager.ts";
+    9: import { stripMarkdownCodeFence } from "../utils/aiSdkCompat.ts";
+   10: import { isFeatureFlagEnabled } from "../../src/shared/utils/featureFlags.ts";
+   11:
+   12: export const HANDOFF_WARNING_THRESHOLD = 0.85;
+   13: export const HANDOFF_EXHAUSTION_THRESHOLD = 0.95;
+   14:
+   15: const MAX_HISTORY_TOKENS_FOR_SUMMARY = 8000;
+   16: const DEFAULT_MAX_MESSAGES_FOR_SUMMARY = 30;
+   17: const DEFAULT_SUMMARY_RESPONSE_TOKENS = 800;
+   18: const MAX_SUMMARY_LENGTH = 2000;
+   19: const MAX_TASK_PROGRESS_LENGTH = 1200;
+   20: const MAX_DECISIONS = 8;
+   21: const MAX_ENTITIES = 10;
+   22: const DEFAULT_TTL_MS = 5 * 60 * 60 * 1000;
+   23: const OMNI_MODEL_TAG_PATTERN = /(?:\\n|\n|\r)*<omniModel>[^<]+<\/omniModel>(?:\\n|\n|\r)*/g;
+   24: const inflightHandoffGenerations = new Set<string>();
+   25:
+   26: const HANDOFF_PROMPT_TEMPLATE = `You are a context summarizer. Analyze the conversation below and generate a structured handoff summary.
+   27: This summary will be used to restore context when this conversation is moved to a new AI account.
+
+--- lines 647-704 ---
+  647: Continue seamlessly from where the session left off.`;
+  648: }
+  649:
+  650: /**
+  651:  * Evaluate whether a universal handoff is needed for a model/provider switch.
+  652:  *,
+  653:  * @returns "generate" - need to create a new handoff summary
+  654:  *          "inject"  - handoff already exists, just inject it
+  655:  *          "skip"    - no handoff needed
+  656:  */
+  657: export function shouldGenerateUniversalHandoff(options: {
+  658:   sessionId: string | null;
+  659:   comboName: string;
+  660:   previousModel: string | null;
+  661:   currentModel: string;
+  662:   universalConfig: UniversalHandoffConfig;
+  663: }): "generate" | "inject" | "skip" {
+  664:   if (!options.universalConfig.enabled) return "skip";
+  665:   if (!options.previousModel) return "skip";
+  666:   if (options.previousModel === options.currentModel) return "skip";
+  667:
+  668:   // Check if handoff already exists for this session/combo
+  669:   if (options.sessionId) {
+  670:     const existing = getHandoff(options.sessionId, options.comboName);
+  671:     if (existing && existing.summary) return "inject";
+  672:   }
+  673:
+  674:   return "generate";
+  675: }
+  676:
+  677: // #11552 — universal-handoff regeneration backoff.
+  678: //
+  679: // A universal handoff whose summary comes back unparseable persists NOTHING, so
+  680: // `shouldGenerateUniversalHandoff` keeps answering "generate" and the very next
+  681: // model switch in the same session re-issues the same full-history
+  682: // summarization call and throws the answer away again. With a switch-heavy
+  683: // strategy (weighted, random, round-robin, p2c) the models alternate on almost
+  684: // every turn, so that becomes an extra discarded upstream call on a large
+  685: // fraction of requests — real money on a paid provider, real quota on a metered
+  686: // one. Back off per (session, combo) instead of hammering.
+  687: //
+  688: // Scope is deliberately narrow: only the "responded, but the content is not a
+  689: // usable handoff" outcome is tracked. A transient upstream failure
+  690: // (`!response.ok`) is NOT — that one is worth retrying on the next switch, and
+  691: // the context-relay path relies on exactly that behavior
+  692: // (tests/unit/context-handoff.test.ts → "allows a new attempt after a failed
+  693: // in-flight generation").
+  694: const HANDOFF_UNPARSEABLE_BASE_COOLDOWN_MS = 5 * 60 * 1000;
+  695: const HANDOFF_UNPARSEABLE_MAX_COOLDOWN_MS = 60 * 60 * 1000;
+  696: const MAX_TRACKED_HANDOFF_COOLDOWNS = 500;
+  697:
+  698: type HandoffCooldownState = { consecutive: number; retryAfter: number };
+  699: const universalHandoffCooldowns = new Map<string, HandoffCooldownState>();
+  700:
+  701: type UniversalHandoffOutcome = "generated" | "unparseable" | "unavailable";
+  702:
+  703: function isUniversalHandoffCoolingDown(key: string): boolean {
+  704:   const entry = universalHandoffCooldowns.get(key);
+
+--- lines 731-765 ---
+  731:   universalHandoffCooldowns.set(key, { consecutive, retryAfter: Date.now() + cooldownMs });
+  732:   pruneUniversalHandoffCooldowns();
+  733: }
+  734:
+  735: /** Test seam: drop all universal-handoff regeneration cooldowns. */
+  736: export function resetUniversalHandoffCooldowns(): void {
+  737:   universalHandoffCooldowns.clear();
+  738: }
+  739:
+  740: // Every non-"generated" outcome across both handoff generators (this one and
+  741: // the older generateHandoffAsync above) used to be silent -- context_handoffs
+  742: // staying empty gave no signal on WHY (upstream call failing vs. malformed
+  743: // output vs. no history to summarize). Every live handoff then falls back to
+  744: // the bare no-summary note (buildUniversalHandoffSystemMessage's `!payload`
+  745: // branch / the context-relay equivalent), which is what actually reaches the
+  746: // model/user; without this log that always reads as a mystery instead of a
+  747: // traceable cause.
+  748: function logUniversalHandoffOutcome(
+  749:   outcome: "unavailable" | "unparseable",
+  750:   comboName: string,
+  751:   detail: string
+  752: ): void {
+  753:   if (process.env.NODE_ENV === "test") return;
+  754:   console.warn(`[universal-handoff] ${outcome} (combo=${comboName}): ${detail}`);
+  755: }
+  756:
+  757: /** Reads the summary model's reply as text, tolerating non-JSON bodies. */
+  758: async function readUniversalHandoffResponse(response: Response): Promise<string> {
+  759:   try {
+  760:     return getResponseText((await response.clone().json()) as Record<string, unknown>);
+  761:   } catch {
+  762:     return await response
+  763:       .clone()
+  764:       .text()
+  765:       .catch(() => "");
+
+--- lines 844-887 ---
+  844:     messageCount: Array.isArray(options.messages) ? options.messages.length : 0,
+  845:     model: summaryModel,
+  846:     lastModel: options.prevModel,
+  847:     warningThresholdPct: 0,
+  848:     generatedAt: new Date().toISOString(),
+  849:     expiresAt: new Date(Date.now() + options.ttlMs).toISOString(),
+  850:   });
+  851:   return "generated";
+  852: }
+  853:
+  854: export function maybeGenerateUniversalHandoff(options: {
+  855:   sessionId: string | null;
+  856:   comboName: string;
+  857:   messages: MessageLike[];
+  858:   prevModel: string | null;
+  859:   currModel: string;
+  860:   universalConfig: UniversalHandoffConfig;
+  861:   handleSingleModel: (body: Record<string, unknown>, modelStr: string) => Promise<Response>;
+  862: }): void {
+  863:   const decision = shouldGenerateUniversalHandoff({
+  864:     sessionId: options.sessionId,
+  865:     comboName: options.comboName,
+  866:     previousModel: options.prevModel,
+  867:     currentModel: options.currModel,
+  868:     universalConfig: options.universalConfig,
+  869:   });
+  870:
+  871:   if (decision !== "generate") return;
+  872:   if (!options.sessionId) return;
+  873:
+  874:   const inflightKey = getInflightKey(options.sessionId, options.comboName);
+  875:   // #11552: the previous attempt for this session/combo answered with something
+  876:   // that is not a usable handoff. Re-asking on every model switch just burns an
+  877:   // upstream call whose response is discarded — wait out the backoff instead.
+  878:   if (isUniversalHandoffCoolingDown(inflightKey)) return;
+  879:   if (inflightHandoffGenerations.has(inflightKey)) return;
+  880:   inflightHandoffGenerations.add(inflightKey);
+  881:
+  882:   const ttlMs = (options.universalConfig.ttlMinutes || 300) * 60 * 1000;
+  883:
+  884:   setImmediate(() => {
+  885:     generateUniversalHandoffAsync({
+  886:       sessionId: options.sessionId as string,
+  887:       comboName: options.comboName,
+
+--- lines 903-937 ---
+  903:         if (process.env.NODE_ENV !== "test") {
+  904:           console.warn("[universal-handoff] Generation failed:", err?.message || err);
+  905:         }
+  906:       })
+  907:       .finally(() => {
+  908:         inflightHandoffGenerations.delete(inflightKey);
+  909:       });
+  910:   });
+  911: }
+  912:
+  913: export function injectUniversalHandoffBody(
+  914:   body: Record<string, unknown>,
+  915:   prevModel: string,
+  916:   currModel: string,
+  917:   reason: string,
+  918:   existingPayload?: HandoffPayload | null,
+  919:   _relayMode?: "schema-locked" | "standard",
+  920:   sourceFormat?: string | null
+  921: ): Record<string, unknown> {
+  922:   const handoffContent = buildUniversalHandoffSystemMessage(
+  923:     prevModel,
+  924:     currModel,
+  925:     reason,
+  926:     existingPayload
+  927:   );
+  928:
+  929:   const isResponsesRequest =
+  930:     Object.prototype.hasOwnProperty.call(body, "input") ||
+  931:     Object.prototype.hasOwnProperty.call(body, "instructions");
+  932:
+  933:   if (isResponsesRequest) {
+  934:     const existingInstructions =
+  935:       typeof body.instructions === "string" && body.instructions.trim().length > 0
+  936:         ? body.instructions
+  937:         : "";
+
+======================================================================
+FILE: tests/integration/combo-matrix/context-relay-handoff.test.ts
+======================================================================
+
+--- lines 1-105 ---
+    1: // tests/integration/combo-matrix/context-relay-handoff.test.ts
+    2: //
+    3: // Deterministic in-process tests for context-relay UNIVERSAL HANDOFF behavior:
+    4: //   the session-context transfer that fires when a model switch is detected,
+    5: //   regardless of provider (provider-agnostic). This is the distinguishing
+    6: //   behavior of context-relay that was deferred as TODO(phase-2) in the
+    7: //   original combo-matrix coverage.
+    8: //
+    9: // What is tested here:
+   10: //   1. Universal handoff fires (extra summary dispatch + DB record) when:
+   11: //      - universalHandoffConfig.enabled = true (default)
+   12: //      - request carries x-omniroute-session-id header
+   13: //      - session_model_history records a DIFFERENT prior model than the combo target
+   14: //   2. Control (no model switch): prevModel === currModel — handoff must NOT fire.
+   15: //   3. Control (no session ID): no header passed — handoff must NOT fire.
+   16: //
+   17: // Codex-specific block (lines 2143-2183 in combo.ts):
+   18: //   Requires strategy === "context-relay" AND provider === "codex" AND a live
+   19: //   codex session connection + quota fetcher. The seams (getSessionConnection /
+   20: //   fetchCodexQuota) are NOT exported from contextHandoff.ts as testable hooks;
+   21: //   there is no in-process mechanism equivalent to registerQuotaFetcher for the
+   22: //   codex path. This block requires a real codex provider connection (VPS) and
+   23: //   is NOT covered here. The universal-handoff path above is the user-visible,
+   24: //   provider-agnostic behavior and is now fully covered.
+   25:
+   26: import test from "node:test";
+   27: import assert from "node:assert/strict";
+   28: import { createComboRoutingHarness, providerFromUrl } from "../_comboRoutingHarness.ts";
+   29:
+   30: // The harness restores the fetch present at construction during teardown.
+   31: // A late background handoff must never escape to a real provider with fixture credentials.
+   32: globalThis.fetch = async () => {
+   33:   throw new Error("Unexpected network request outside the scripted handoff fixture");
+   34: };
+   35: const h = await createComboRoutingHarness("combo-relay-handoff");
+   36: const {
+   37:   BaseExecutor,
+   38:   combosDb,
+   39:   handleChat,
+   40:   buildRequest,
+   41:   seedConnection,
+   42:   resetStorage,
+   43:   buildOpenAIResponse,
+   44:   waitFor,
+   45:   toPlainHeaders,
+   46: } = h;
+   47:
+   48: // Import DB helpers AFTER harness so they share the same DB instance (DATA_DIR
+   49: // is set by the harness before any import triggers DB init).
+   50: const { recordSessionModelUsage, getHandoff } =
+   51:   await import("../../../src/lib/db/contextHandoffs.ts");
+   52:
+   53: // A minimal but valid handoff-JSON blob that parseHandoffJSON will accept.
+   54: // Must have at minimum a non-empty "summary" field.
+   55: const SCRIPTED_SUMMARY_JSON = JSON.stringify({
+   56:   summary: "User initiated a context-relay handoff test and requested a model switch.",
+   57:   keyDecisions: ["switched from gemini to openai"],
+   58:   taskProgress: "in-progress",
+   59:   activeEntities: ["context-relay-test"],
+   60: });
+   61:
+   62: const COMBO_NAME = "m-relay-handoff";
+   63: // The session ID must use the external-session format: extractExternalSessionId in chat.ts
+   64: // reads "x-session-id" (not "x-omniroute-session-id") and prefixes the result with "ext:".
+   65: // We must seed session_model_history with this exact "ext:"-prefixed ID so that
+   66: // getLastSessionModel(relayOptions.sessionId, comboName) returns the prior model.
+   67: const SESSION_HEADER_VALUE = "relay-handoff-session-001";
+   68: const SESSION_ID = `ext:${SESSION_HEADER_VALUE}`; // matches what extractExternalSessionId produces
+   69: const PREV_MODEL = "gemini/gemini-2.5-flash"; // the "old" model — must differ from combo target
+   70: const CURR_MODEL = "openai/gpt-4o-mini"; // the combo target model (provider/model format)
+   71:
+   72: // Build a Request with the session-id header.
+   73: function relayRequest(withSessionId = true) {
+   74:   const headers: Record<string, string> = withSessionId
+   75:     ? { "x-session-id": SESSION_HEADER_VALUE } // x-session-id → relayOptions.sessionId = "ext:..."
+   76:     : {};
+   77:   return buildRequest({
+   78:     headers,
+   79:     body: {
+   80:       model: COMBO_NAME,
+   81:       stream: false,
+   82:       messages: [
+   83:         { role: "user", content: "Prior turn — building something important in the test session." },
+   84:       ],
+   85:     },
+   86:   });
+   87: }
+   88:
+   89: // Install a recording fetch that:
+   90: //   • returns a valid handoff JSON (wrapped in an OpenAI completion) for the
+   91: //     summary request (identified by its public prompt; internal flags are stripped)
+   92: //   • returns a normal OpenAI response for every other call
+   93: function installHandoffAwareFetch() {
+   94:   h.calls.length = 0;
+   95:
+   96:   globalThis.fetch = async (url: any, init: any = {}) => {
+   97:     const u = String(url);
+   98:     const provider = providerFromUrl(u);
+   99:     const headers = toPlainHeaders(init?.headers);
+  100:
+  101:     // Parse request body to detect the internal summary request
+  102:     let bodyObj: Record<string, unknown> = {};
+  103:     try {
+  104:       bodyObj =
+  105:         typeof init?.body === "string"
+
+--- lines 151-291 ---
+  151: });
+  152: test.after(async () => {
+  153:   await h.cleanup();
+  154: });
+  155:
+  156: // ── Test 1: universal handoff fires on model switch ────────────────────────────
+  157: //
+  158: // Seed session history so getLastSessionModel returns PREV_MODEL (gemini).
+  159: // Combo target is CURR_MODEL (openai). The switch is detected and
+  160: // maybeGenerateUniversalHandoff fires via setImmediate → calls handleSingleModel
+  161: // (extra upstream dispatch) → parses response → upsertHandoff writes to DB.
+  162: //
+  163: // Observable 1: h.calls has ≥2 entries (main request + summary dispatch).
+  164: // Observable 2: getHandoff(sessionId, comboName) returns a record with a
+  165: //               non-empty .summary (proves the FULL path executed, not just the
+  166: //               dispatch). The assertion FAILS if the handoff did not fire.
+  167: test("context-relay universal handoff: fires and writes handoff record on model switch", async () => {
+  168:   await seedConnection("openai", { apiKey: "sk-openai-handoff" });
+  169:   await seedConnection("gemini", { apiKey: "sk-gemini-handoff" });
+  170:
+  171:   await combosDb.createCombo({
+  172:     name: COMBO_NAME,
+  173:     strategy: "context-relay",
+  174:     config: { maxRetries: 0, retryDelayMs: 0, stickyRoundRobinLimit: 1 },
+  175:     models: [
+  176:       // Single target — openai/gpt-4o-mini — so modelStr = CURR_MODEL
+  177:       { id: "rh-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" },
+  178:     ],
+  179:   });
+  180:
+  181:   // Seed the prior model usage so getLastSessionModel returns PREV_MODEL.
+  182:   // universalHandoffConfig.enabled = true by DEFAULT_UNIVERSAL_HANDOFF_CONFIG.
+  183:   recordSessionModelUsage(SESSION_ID, COMBO_NAME, PREV_MODEL, "gemini", undefined);
+  184:
+  185:   installHandoffAwareFetch();
+  186:
+  187:   const r = await handleChat(relayRequest(/* withSessionId */ true));
+  188:   assert.equal(r.status, 200, "main request must succeed");
+  189:   await r.json();
+  190:
+  191:   // Wait for the setImmediate + generateUniversalHandoffAsync to complete and
+  192:   // write the DB record. Poll for up to 2 s — typically resolves in <100 ms.
+  193:   const handoff = await waitFor(() => getHandoff(SESSION_ID, COMBO_NAME), 2000);
+  194:
+  195:   assert.ok(
+  196:     handoff !== null,
+  197:     "universal handoff record must be written to DB when a model switch is detected"
+  198:   );
+  199:   assert.ok(
+  200:     typeof handoff!.summary === "string" && handoff!.summary.length > 0,
+  201:     `handoff.summary must be non-empty; got: ${JSON.stringify(handoff!.summary)}`
+  202:   );
+  203:   assert.equal(handoff!.comboName, COMBO_NAME, "handoff must be keyed to the correct combo");
+  204:   assert.equal(handoff!.sessionId, SESSION_ID, "handoff must be keyed to the correct session");
+  205:
+  206:   // Extra dispatch observable: main (index 0) + summary (index ≥ 1).
+  207:   assert.ok(
+  208:     h.calls.length >= 2,
+  209:     `expected ≥2 upstream dispatches (main + summary); got ${h.calls.length}: ${JSON.stringify(h.calls.map((c) => ({ i: c.index, p: c.provider, m: c.model })))}`
+  210:   );
+  211: });
+  212:
+  213: // ── Test 2: control — no model switch, handoff must NOT fire ──────────────────
+  214: //
+  215: // DO NOT seed a prior model. getLastSessionModel returns null → prevModel is
+  216: // null → the `if (prevModel && prevModel !== modelStr)` branch is skipped →
+  217: // no handoff. The assertion FAILS if the code incorrectly fires a handoff.
+  218: test("context-relay universal handoff: does NOT fire when no prior model is recorded (no switch)", async () => {
+  219:   await seedConnection("openai", { apiKey: "sk-openai-noswitch" });
+  220:
+  221:   await combosDb.createCombo({
+  222:     name: COMBO_NAME,
+  223:     strategy: "context-relay",
+  224:     config: { maxRetries: 0, retryDelayMs: 0, stickyRoundRobinLimit: 1 },
+  225:     models: [{ id: "ns-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+  226:   });
+  227:
+  228:   // No recordSessionModelUsage call → getLastSessionModel returns null → no switch.
+  229:   installHandoffAwareFetch();
+  230:
+  231:   const r = await handleChat(relayRequest(true));
+  232:   assert.equal(r.status, 200);
+  233:   await r.json();
+  234:
+  235:   // Give setImmediate time to fire if the bug were present.
+  236:   await new Promise((res) => setTimeout(res, 250));
+  237:
+  238:   const handoff = getHandoff(SESSION_ID, COMBO_NAME);
+  239:   assert.equal(
+  240:     handoff,
+  241:     null,
+  242:     "handoff must NOT be written when no prior model exists (prevModel is null)"
+  243:   );
+  244:
+  245:   // Only the main request — no extra summary dispatch.
+  246:   assert.equal(
+  247:     h.calls.length,
+  248:     1,
+  249:     `expected exactly 1 upstream dispatch (main only); got ${h.calls.length}`
+  250:   );
+  251: });
+  252:
+  253: // ── Test 3: control — no session ID, handoff must NOT fire ────────────────────
+  254: //
+  255: // Session ID gate: `relayOptions?.sessionId` must be truthy.
+  256: // Without the x-omniroute-session-id header, sessionId = null → block is skipped.
+  257: test("context-relay universal handoff: does NOT fire when x-omniroute-session-id header is absent", async () => {
+  258:   await seedConnection("openai", { apiKey: "sk-openai-nosid" });
+  259:
+  260:   await combosDb.createCombo({
+  261:     name: COMBO_NAME,
+  262:     strategy: "context-relay",
+  263:     config: { maxRetries: 0, retryDelayMs: 0, stickyRoundRobinLimit: 1 },
+  264:     models: [{ id: "sid-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+  265:   });
+  266:
+  267:   // Seed prior model — but without the header the session block won't fire.
+  268:   recordSessionModelUsage(SESSION_ID, COMBO_NAME, PREV_MODEL, "gemini", undefined);
+  269:
+  270:   installHandoffAwareFetch();
+  271:
+  272:   // Send WITHOUT the session header.
+  273:   const r = await handleChat(relayRequest(/* withSessionId */ false));
+  274:   assert.equal(r.status, 200);
+  275:   await r.json();
+  276:
+  277:   await new Promise((res) => setTimeout(res, 250));
+  278:
+  279:   const handoff = getHandoff(SESSION_ID, COMBO_NAME);
+  280:   assert.equal(
+  281:     handoff,
+  282:     null,
+  283:     "handoff must NOT be written when x-omniroute-session-id header is absent (sessionId gate)"
+  284:   );
+  285:
+  286:   assert.equal(
+  287:     h.calls.length,
+  288:     1,
+  289:     `expected exactly 1 upstream dispatch (main only, no summary); got ${h.calls.length}`
+  290:   );
+  291: });
+
+======================================================================
+2) AVAILABLE CONTAINER RUNTIME
+======================================================================
+podman: /usr/bin/podman
+docker: /usr/bin/docker
+node: not installed on host
+npm: not installed on host
+git: not installed on host
+
+Read-only inspection finished. No files were changed.
+[opc@litellm-gateway ~]$
