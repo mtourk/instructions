@@ -1,0 +1,361 @@
+[opc@litellm-gateway ~]$
+set -eu
+
+SRC="$HOME/OmniRoute-source"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+if [ -e "$SRC" ]; then
+  echo "STOP: $SRC already exists; nothing overwritten."
+  exit 1
+fi
+
+echo '========== 1. DOWNLOAD OFFICIAL SOURCE =========='
+curl -fLsS \
+  'https://github.com/diegosouzapw/OmniRoute/archive/refs/heads/release/v3.8.51.zip' \
+  -o "$TMP/source.zip"
+
+echo '========== 2. EXTRACT WITHOUT GIT =========='
+python3 - "$TMP/source.zip" "$SRC" <<'PY'
+import sys, zipfile
+from pathlib import Path
+
+archive, target = Path(sys.argv[1]), Path(sys.argv[2])
+with zipfile.ZipFile(archive) as z:
+    entries = z.infolist()
+    for item in entries:
+        p = Path(item.filename)
+        if p.is_absolute() or ".." in p.parts:
+            raise SystemExit("Unsafe archive path; extraction stopped.")
+    roots = {Path(i.filename).parts[0] for i in entries if Path(i.filename).parts}
+    if len(roots) != 1:
+        raise SystemExit("Unexpected archive layout.")
+    z.extractall(target.parent)
+    extracted = target.parent / next(iter(roots))
+    extracted.rename(target)
+print("Extracted source to:", target)
+PY
+
+echo
+echo '========== 3. SOURCE VERSION =========='
+grep -n '"version"' "$SRC/package.json" | head -1 || true
+
+echo
+echo '========== 4. HANDOFF IMPLEMENTATION AND TESTS =========='
+grep -RInE \
+  'handoffProviders|injectHandoffIntoBody|maybeGenerateHandoff|fromAccount|universal-handoff|context-handoff|percentUsed' \
+  "$SRC/open-sse" "$SRC/src" "$SRC/tests" \
+  --include='*.ts' --include='*.tsx' --include='*.js' \
+  2>/dev/null | head -180 || true
+
+echo
+echo '========== 5. RELATED TEST FILES =========='
+find "$SRC/tests" -type f \
+  \( -iname '*context*relay*' -o -iname '*handoff*' -o -iname '*combo*' \) \
+  -print 2>/dev/null | head -100
+
+echo
+echo '========== 6. TEST COMMANDS =========='
+node -e '
+const p=require(process.argv[1]);
+console.log(JSON.stringify(p.scripts || {}, null, 2));
+' "$SRC/package.json"
+
+echo
+echo "AUDIT COMPLETE: $SRC"
+echo 'No running container or database was modified.'
+========== 1. DOWNLOAD OFFICIAL SOURCE ==========
+========== 2. EXTRACT WITHOUT GIT ==========
+Extracted source to: /home/opc/OmniRoute-source
+
+========== 3. SOURCE VERSION ==========
+3:  "version": "3.8.51",
+
+========== 4. HANDOFF IMPLEMENTATION AND TESTS ==========
+/home/opc/OmniRoute-source/open-sse/config/cliFingerprints.ts:289: * permitted` on a claude hop, from the context/universal-handoff markers set in
+/home/opc/OmniRoute-source/open-sse/handlers/chatCore/attemptLogging.ts:95: * dispatches (pipeline-strategy stages, smart-auto-pipeline, context-handoff
+/home/opc/OmniRoute-source/open-sse/handlers/chatCore/attemptLogging.ts:149:      // context-handoff summaries — #12430 item 4) embed the transcript as a
+/home/opc/OmniRoute-source/open-sse/handlers/chatCore/passthroughHelpers.ts:95:// body (e.g. the context-handoff summary request) can be dispatched through a
+/home/opc/OmniRoute-source/open-sse/handlers/chatCore/upstreamBody.ts:296:  // All models, including universal/context-handoff summary models, pass through
+/home/opc/OmniRoute-source/open-sse/services/agentrouterQuotaFetcher.ts:116:  const percentUsed = limitReached ? 1 : 0;
+/home/opc/OmniRoute-source/open-sse/services/agentrouterQuotaFetcher.ts:119:    used: percentUsed * 100,
+/home/opc/OmniRoute-source/open-sse/services/agentrouterQuotaFetcher.ts:121:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/antigravityQuotaFamily.ts:90:    const percentUsed = Number((windowInfo as Record<string, unknown>).percentUsed);
+/home/opc/OmniRoute-source/open-sse/services/antigravityQuotaFamily.ts:91:    if (!Number.isFinite(percentUsed)) continue;
+/home/opc/OmniRoute-source/open-sse/services/antigravityQuotaFamily.ts:92:    const remaining = Math.max(0, Math.min(100, (1 - percentUsed) * 100));
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:12: * We return percentUsed = max(5h%, weekly%, monthly%) so the system switches accounts when
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:46:  windows: Record<string, { percentUsed: number; resetAt: string | null }>;
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:47:  window5h: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:48:  windowWeekly: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:49:  windowMonthly: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:176:  // Most restrictive window = highest percentUsed
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:180:    percentUsed: pct5h,
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:184:    percentUsed: pctWeekly,
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:188:    percentUsed: pctMonthly,
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:208:    percentUsed: worstPercentUsed,
+/home/opc/OmniRoute-source/open-sse/services/bailianQuotaFetcher.ts:221: * Returns percentUsed = max(5h%, weekly%, monthly%) — worst-case across all 3 windows.
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:10: * We return percentUsed = max(5h%, 7d%) so the system switches accounts when
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:49:  window5h: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:50:  window7d: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:53:  allWindows?: Record<string, { percentUsed: number; resetAt: string | null }>;
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:180:  window5h: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:181:  window7d: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:183:  if (quota.window7d.percentUsed > quota.window5h.percentUsed) {
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:186:  if (quota.window5h.percentUsed > quota.window7d.percentUsed) {
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:196: * Returns percentUsed = max(5h%, 7d%) — worst-case across both windows.
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:311:): { percentUsed: number; resetAt: string | null } | null {
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:313:  const percentUsed = toNumber(window["used_percent"] ?? window["usedPercent"], 0) / 100;
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:314:  return { percentUsed, resetAt: parseWindowReset(window) };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:368:  primary: { percentUsed: number; resetAt: string | null } | null;
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:369:  secondary: { percentUsed: number; resetAt: string | null } | null;
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:380:  target: Record<string, { percentUsed: number; resetAt: string | null }>,
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:418:  const window5h = parsedPrimary ?? { percentUsed: 0, resetAt: null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:419:  const window7d = parsedSecondary ?? { percentUsed: 0, resetAt: null };
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:420:  const worstPercentUsed = Math.max(window5h.percentUsed, window7d.percentUsed);
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:425:  const windows: Record<string, { percentUsed: number; resetAt: string | null }> = {};
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:430:  const allWindows: Record<string, { percentUsed: number; resetAt: string | null }> = {
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:451:    percentUsed: worstPercentUsed,
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:488:  if (quota.window7d.percentUsed >= threshold && quota.window7d.resetAt) {
+/home/opc/OmniRoute-source/open-sse/services/codexQuotaFetcher.ts:494:  if (quota.window5h.percentUsed >= threshold && quota.window5h.resetAt) {
+/home/opc/OmniRoute-source/open-sse/services/combo/comboPredicates.ts:598:  const percentUsed = Number(record.percentUsed);
+/home/opc/OmniRoute-source/open-sse/services/combo/comboPredicates.ts:599:  if (Number.isFinite(percentUsed)) return clampPercent((1 - percentUsed) * 100);
+/home/opc/OmniRoute-source/open-sse/services/combo/comboSetup.ts:5: * config, resilience settings, universal-handoff config, server-side context-cache pinning
+/home/opc/OmniRoute-source/open-sse/services/combo/executeTargetAttempt.ts:34:  maybeGenerateHandoff,
+/home/opc/OmniRoute-source/open-sse/services/combo/executeTargetAttempt.ts:625:        (deps.relayConfig.handoffProviders ?? []).includes(provider) &&
+/home/opc/OmniRoute-source/open-sse/services/combo/executeTargetAttempt.ts:646:            maybeGenerateHandoff({
+/home/opc/OmniRoute-source/open-sse/services/combo/executeTargetAttempt.ts:650:              percentUsed: quotaInfo.percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:169:): { percentUsed: number | null; resetAt: string | null } | null {
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:173:  const percentUsed = finiteNumberOrNull(window.percentUsed);
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:175:  return { percentUsed, resetAt };
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:185:type QuotaWindowSnapshot = { percentUsed: number | null; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:221:    percentUsed: normalizeWindowPercentUsed(window.percentUsed),
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:318: * score uses: a missing window reads the snapshot-wide percentUsed, and a
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:326:  const overallPercentUsed = clamp01(finiteNumberOrNull(quota.percentUsed) ?? 0.5);
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:332:    sessionRemaining: clamp01(1 - (sessionWindow?.percentUsed ?? overallPercentUsed)),
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:333:    weeklyRemaining: clamp01(1 - (weeklyWindow?.percentUsed ?? overallPercentUsed)),
+/home/opc/OmniRoute-source/open-sse/services/combo/quotaScoring.ts:433:    usable = Math.min(usable, clamp01(1 - (window.percentUsed ?? 0.5)));
+/home/opc/OmniRoute-source/open-sse/services/comboConfig.ts:114:  handoffProviders: ["codex"],
+/home/opc/OmniRoute-source/open-sse/services/context7QuotaFetcher.ts:19:  percentUsed: number;
+/home/opc/OmniRoute-source/open-sse/services/context7QuotaFetcher.ts:70:  const percentUsed = total > 0 ? used / total : 0;
+/home/opc/OmniRoute-source/open-sse/services/context7QuotaFetcher.ts:88:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:50:  handoffProviders?: string[];
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:179:  const hasExplicitProviders = Array.isArray(config?.handoffProviders);
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:180:  const handoffProviders = hasExplicitProviders
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:181:    ? (config?.handoffProviders as unknown[])
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:197:    handoffProviders: hasExplicitProviders ? handoffProviders : ["codex"],
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:393:  percentUsed: number;
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:423:    _omnirouteInternalRequest: "context-handoff",
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:461:    fromAccount: options.connectionId,
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:474:export function maybeGenerateHandoff(options: {
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:478:  percentUsed: number;
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:488:  if (relayConfig.handoffProviders.length === 0) return;
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:489:  if (options.percentUsed < relayConfig.handoffThreshold) return;
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:490:  if (options.percentUsed >= HANDOFF_EXHAUSTION_THRESHOLD) return;
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:563:export function injectHandoffIntoBody(
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:677:// #11552 — universal-handoff regeneration backoff.
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:692:// (tests/unit/context-handoff.test.ts → "allows a new attempt after a failed
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:735:/** Test seam: drop all universal-handoff regeneration cooldowns. */
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:754:  console.warn(`[universal-handoff] ${outcome} (combo=${comboName}): ${detail}`);
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:816:    _omnirouteInternalRequest: "universal-handoff",
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:839:    fromAccount: `universal:${options.prevModel}`,
+/home/opc/OmniRoute-source/open-sse/services/contextHandoff.ts:904:          console.warn("[universal-handoff] Generation failed:", err?.message || err);
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:16: *     used = 0, total = usable_requests, percentUsed = usable_requests > 0 ? 0 : 1
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:18: *   "remaining" only and only block (percentUsed = 1) when the bucket hits 0.
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:20: *     percentUsed = credits > 0 ? 0 : 1
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:104:  // Block (percentUsed = 1) only when the active bucket hits zero. Otherwise
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:106:  let percentUsed = 0;
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:108:    percentUsed = usableRequests > 0 ? 0 : 1;
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:110:    percentUsed = credits > 0 ? 0 : 1;
+/home/opc/OmniRoute-source/open-sse/services/crofUsageFetcher.ts:116:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:43:  windowDaily?: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:117:  // percentUsed is inverse: 0% used when balance is full, 100% when exhausted
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:118:  const percentUsed = limitReached ? 1 : 0;
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:121:    used: percentUsed * 100,
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:123:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/deepseekQuotaFetcher.ts:128:    windowDaily: { percentUsed, resetAt: null },
+/home/opc/OmniRoute-source/open-sse/services/firecrawlQuotaFetcher.ts:90:  const percentUsed = planCredits > 0 ? used / planCredits : remainingCredits <= 0 ? 1 : 0;
+/home/opc/OmniRoute-source/open-sse/services/firecrawlQuotaFetcher.ts:97:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/firecrawlQuotaFetcher.ts:103:    limitReached: remainingCredits <= 0 || percentUsed >= 1,
+/home/opc/OmniRoute-source/open-sse/services/firecrawlQuotaFetcher.ts:135:      percentUsed: 0,
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:114:): { percentUsed: number; resetAt: string | null } {
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:115:  const percentUsed = limit > 0 ? Math.min(1, window.count / limit) : 0;
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:117:  return { percentUsed, resetAt };
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:142:  const worstPercentUsed = Math.max(window5h.percentUsed, window7d.percentUsed);
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:144:    worstPercentUsed === window5h.percentUsed ? window5h.resetAt : window7d.resetAt;
+/home/opc/OmniRoute-source/open-sse/services/freeModelQuotaFetcher.ts:149:    percentUsed: worstPercentUsed,
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:155: * Compute percentUsed (0-1) for a single quota entry. Prefers the explicit
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:161:function percentUsedForQuota(entry: unknown): number | null {
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:215:  windows: Record<string, { percentUsed: number; resetAt: string | null }>
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:216:): { percentUsed: number; resetAt: string | null } {
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:217:  const effectiveByBase = new Map<string, { percentUsed: number; resetAt: string | null }>();
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:221:    if (!cur || entry.percentUsed < cur.percentUsed) {
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:222:      effectiveByBase.set(base, { percentUsed: entry.percentUsed, resetAt: entry.resetAt ?? null });
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:225:  let percentUsed = 0;
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:228:    if (eff.percentUsed > percentUsed) {
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:229:      percentUsed = eff.percentUsed;
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:233:  return { percentUsed, resetAt };
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:257:  const windows: Record<string, { percentUsed: number; resetAt: string | null }> = {};
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:259:    const percentUsed = percentUsedForQuota(entry);
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:260:    if (percentUsed === null) continue;
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:261:    windows[name] = { percentUsed, resetAt: resetAtForQuota(entry) };
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:284:  const { percentUsed, resetAt } = aggregateGroupedQuotaValues(providerScopedWindows);
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:289:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:293:    limitReached: percentUsed >= 1 - 1e-9,
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:328:  windows: Record<string, { percentUsed: number; resetAt: string | null }>,
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:330:): Record<string, { percentUsed: number; resetAt: string | null }> {
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:331:  const normalized: Record<string, { percentUsed: number; resetAt: string | null }> = {};
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:361:    const worst = modelWindows.reduce((a, b) => (a[1].percentUsed > b[1].percentUsed ? a : b));
+/home/opc/OmniRoute-source/open-sse/services/genericQuotaFetcher.ts:374:    const worst = weeklyWindows.reduce((a, b) => (a[1].percentUsed > b[1].percentUsed ? a : b));
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:101: * `percentUsed` here is the decoder's 0-100 scale (see
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:102: * grokCliQuotaFrame.ts::decodeGrokCreditsFrame). `QuotaInfo.percentUsed`
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:104: * `quotaPreflight.ts::remainingPercentFrom` computes `(1 - percentUsed) * 100`,
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:107:function buildQuota(percentUsed: number, resetAt: string | null): GrokCliQuota {
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:108:  const clampedPercent = Math.min(100, Math.max(0, percentUsed));
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:113:    percentUsed: fraction,
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFetcher.ts:169:    const quota = buildQuota(decoded.percentUsed, decoded.resetAt);
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFrame.ts:64:  percentUsed: number;
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFrame.ts:241: * `{ percentUsed, resetAt }` (percentUsed on a 0-100 scale), or `null` when
+/home/opc/OmniRoute-source/open-sse/services/grokCliQuotaFrame.ts:263:      percentUsed: Math.min(100, usageRatio * 100),
+/home/opc/OmniRoute-source/open-sse/services/grokQuotaFetcher.ts:345: * Single weekly window; percentUsed = creditUsagePercent / 100.
+/home/opc/OmniRoute-source/open-sse/services/grokQuotaFetcher.ts:395: * Grok has a single weekly window; percentUsed = creditUsagePercent / 100.
+/home/opc/OmniRoute-source/open-sse/services/grokQuotaFetcher.ts:399:  const percentUsed = Math.max(0, Math.min(1, snap.percent / 100));
+/home/opc/OmniRoute-source/open-sse/services/grokQuotaFetcher.ts:403:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/grokQuotaFetcher.ts:407:        percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:166:function percentUsedFrom(used: number, limit: number | null): number {
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:180:  const monthlyPercent = percentUsedFrom(key.monthlyUsed, key.monthlyLimit);
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:181:  const premiumPercent = percentUsedFrom(key.premiumUsed, key.premiumWeeklyLimit);
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:194:    key.monthlyLimit !== null ? { percentUsed: monthlyPercent, resetAt: null } : undefined;
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:197:      ? { percentUsed: premiumPercent, resetAt: key.premiumResetAt }
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:202:  // Legacy single-signal percentUsed = worst of the two windows.
+/home/opc/OmniRoute-source/open-sse/services/llmgatewayQuotaFetcher.ts:208:    percentUsed: worstPercent,
+/home/opc/OmniRoute-source/open-sse/services/lyceumQuotaFetcher.ts:126: * percentUsed reflects consumption of the current credit balance. A zero
+/home/opc/OmniRoute-source/open-sse/services/lyceumQuotaFetcher.ts:133:  const percentUsed = total > 0 ? Math.min(1, Math.max(0, used / total)) : 0;
+/home/opc/OmniRoute-source/open-sse/services/lyceumQuotaFetcher.ts:136:  const window: QuotaWindowInfo = { percentUsed, resetAt: null };
+/home/opc/OmniRoute-source/open-sse/services/lyceumQuotaFetcher.ts:139:    used: percentUsed * 100,
+/home/opc/OmniRoute-source/open-sse/services/lyceumQuotaFetcher.ts:141:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:73:  const percentUsed = limitReached ? 1 : 0;
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:75:    used: percentUsed * 100,
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:77:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:84:    windows: { balance: { percentUsed, resetAt: null } },
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:93:function percentUsedFromRemaining(remainingPercentage: unknown): number | null {
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:111:    const percentUsed = percentUsedFromRemaining(quota.remainingPercentage);
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:112:    if (percentUsed === null) continue;
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:113:    windows[name] = { percentUsed, resetAt: quota.resetAt ?? null };
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:118:  const worst = ranked.reduce((a, b) => (a.percentUsed > b.percentUsed ? a : b), first);
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:125:    percentUsed: worst.percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/moonshotQuotaFetcher.ts:130:    limitReached: worst.percentUsed >= 1 - 1e-9,
+/home/opc/OmniRoute-source/open-sse/services/newApiAggregatorQuotaFetcher.ts:137:  const percentUsed = limitReached ? 1 : 0;
+/home/opc/OmniRoute-source/open-sse/services/newApiAggregatorQuotaFetcher.ts:140:    used: percentUsed * 100,
+/home/opc/OmniRoute-source/open-sse/services/newApiAggregatorQuotaFetcher.ts:142:    percentUsed,
+/home/opc/OmniRoute-source/open-sse/services/opencodeQuotaFetcher.ts:28:  window5h: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/opencodeQuotaFetcher.ts:29:  windowWeekly: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/opencodeQuotaFetcher.ts:30:  windowMonthly: { percentUsed: number; resetAt: string | null };
+/home/opc/OmniRoute-source/open-sse/services/opencodeQuotaFetcher.ts:85:  percentUsed: number;
+/home/opc/OmniRoute-source/open-sse/services/opencodeQuotaFetcher.ts:107:    percentUsed: status === "rate-limited" ? 1 : percent / 100,
+
+========== 5. RELATED TEST FILES ==========
+/home/opc/OmniRoute-source/tests/e2e/combo-live-studio.spec.ts
+/home/opc/OmniRoute-source/tests/e2e/combo-unification.spec.ts
+/home/opc/OmniRoute-source/tests/e2e/combos-flow.spec.ts
+/home/opc/OmniRoute-source/tests/helpers/persistence/comboRepositoryConformance.ts
+/home/opc/OmniRoute-source/tests/integration/_comboRoutingHarness.ts
+/home/opc/OmniRoute-source/tests/integration/combo-failover-e2e.test.ts
+/home/opc/OmniRoute-source/tests/integration/combo-matrix/context-relay-codex.test.ts
+/home/opc/OmniRoute-source/tests/integration/combo-matrix/context-relay-handoff.test.ts
+/home/opc/OmniRoute-source/tests/integration/combo-provider-exhaustion.test.ts
+/home/opc/OmniRoute-source/tests/integration/combo-routing-e2e.test.ts
+/home/opc/OmniRoute-source/tests/integration/gemini-combo-cooldown-wait.test.ts
+/home/opc/OmniRoute-source/tests/integration/live-default-combo-wire-capture.test.ts
+/home/opc/OmniRoute-source/tests/integration/live-default-combo-workload.test.ts
+/home/opc/OmniRoute-source/tests/integration/liveDefaultComboShared.ts
+/home/opc/OmniRoute-source/tests/integration/pipeline-combo.test.ts
+/home/opc/OmniRoute-source/tests/integration/quota-pool-delete-combo-cleanup.test.ts
+/home/opc/OmniRoute-source/tests/snapshots/g13/combo-chatcore-public-seams.json
+/home/opc/OmniRoute-source/tests/unit/11947-auto-combo-modalities.test.ts
+/home/opc/OmniRoute-source/tests/unit/14553-combo-delete-purges-proxy-assignments.test.ts
+/home/opc/OmniRoute-source/tests/unit/14889-combos-auto-prepare-once.test.ts
+/home/opc/OmniRoute-source/tests/unit/8332-combo-vision-fallback.test.ts
+/home/opc/OmniRoute-source/tests/unit/9134-repro-audio-combo-rejection.test.ts
+/home/opc/OmniRoute-source/tests/unit/AutoComboCatalog.test.tsx
+/home/opc/OmniRoute-source/tests/unit/api/auto-combo-candidates-revoked-key-14333.test.ts
+/home/opc/OmniRoute-source/tests/unit/api/auto-combo-candidates-route-7819.test.ts
+/home/opc/OmniRoute-source/tests/unit/api/combo-002-first-field.test.ts
+/home/opc/OmniRoute-source/tests/unit/api/combo-error-response.test.ts
+/home/opc/OmniRoute-source/tests/unit/api/context-combos-default-route.test.ts
+/home/opc/OmniRoute-source/tests/unit/api-key-allow-auto-combos.test.ts
+/home/opc/OmniRoute-source/tests/unit/api-keys-allowed-combos-preserve-12267.test.ts
+/home/opc/OmniRoute-source/tests/unit/audio-transcriptions-combo-resolution.test.ts
+/home/opc/OmniRoute-source/tests/unit/audio-translations-combo-resolution.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-budget-fallback-3470.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-budget.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-candidates-free-access-reason.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-candidates-locked-model-visible.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-codex-responses-3509.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-context-advertising.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-credentialed-model-pool.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-engine.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-hidden-models-4558.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-request-controls-6024.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combo-scoring-clamp.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combos-enhanced-4235.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combos-free-models-routes.test.ts
+/home/opc/OmniRoute-source/tests/unit/auto-combos-suffixes-4235.test.ts
+/home/opc/OmniRoute-source/tests/unit/autoCombo/provider-family-combos.test.ts
+/home/opc/OmniRoute-source/tests/unit/autocombo-unification.test.ts
+/home/opc/OmniRoute-source/tests/unit/chat-combo-live-test.test.ts
+/home/opc/OmniRoute-source/tests/unit/chat-context-relay.test.ts
+/home/opc/OmniRoute-source/tests/unit/chatcore-combo-context-limit-8378.test.ts
+/home/opc/OmniRoute-source/tests/unit/chatcore-combo-context-override-rescue.test.ts
+/home/opc/OmniRoute-source/tests/unit/chatcore-combo-sibling-specific-14931.test.ts
+/home/opc/OmniRoute-source/tests/unit/chatcore-compression-combo-predicates.test.ts
+/home/opc/OmniRoute-source/tests/unit/chatgpt-web-handshake-handoff-cleanroom.test.ts
+/home/opc/OmniRoute-source/tests/unit/cli-combo-command.test.ts
+/home/opc/OmniRoute-source/tests/unit/cli-combo-create-models-10954.test.ts
+/home/opc/OmniRoute-source/tests/unit/cli-combo-suggest-commands.test.ts
+/home/opc/OmniRoute-source/tests/unit/codex-tool-handoff-disconnect-499.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-10597-error-body-logging.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-13870-chars4-overdrops-override-primary.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-499-abort.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-account-allowlist-3266.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-agentic-pipeline.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-antigravity-missing-project-reset-8486.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-apply-strategy-ordering-split.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-attempt-body-isolation-7847.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-auto-candidate-expansion.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-auto-config-split.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-auto-pool-visible-only.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-auto-promote.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-auto-tier.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-body-specific-400-stop-4279.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-bootstrap-latency.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-bracket-names.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-breaker-429.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-custom-provider-alias-14135.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-draft.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-effort-variants-8072.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-eligible-connection-2057.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-fingerprint-expansion.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-model-source-5477.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-opencode-prefix.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-builder-options-route.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-cache-invalidation.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-catalog-max-input-tokens.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-claude-per-model-scope.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-cleanup-stale-connection.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-clear-agent-features-12158.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-compat-fallback-attempts-12339.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-config.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-generic-default-10734.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-length.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-overflow-compression-probe.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-prefix-resolution.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-relay.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-requirements.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-context-window-filter.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-control-center.test.ts
+/home/opc/OmniRoute-source/tests/unit/combo-cooldown-retry.test.ts
+
+========== 6. TEST COMMANDS ==========
+-bash: node: command not found
+Connection to 89.168.125.238 closed.
+PS C:\WINDOWS\system32>
