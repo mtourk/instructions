@@ -1,0 +1,397 @@
+
+[opc@litellm-gateway OmniRoute-source]$
+[opc@litellm-gateway OmniRoute-source]$
+cd /home/opc/OmniRoute-test-work && \
+echo '===== ALL getLastSessionModel CALL SITES =====' && \
+grep -R -n -C 5 --include='*.ts' 'getLastSessionModel' open-sse src tests && \
+echo '===== CONNECTION SEEDING AND TARGET CONFIG =====' && \
+grep -R -n -C 4 --include='*.ts' -E 'function seedConnection|seedConnection[[:space:]]*=|connectionId.*kind: "model"|connectionId:' tests/integration/combo-matrix/_comboRoutingHarness.ts tests/integration/combo-matrix/context-relay-handoff.test.ts tests/integration/combo-matrix 2>/dev/null | head -220 && \
+echo '===== CURRENT TEST COPY STATUS =====' && \
+node -e "const p=require('./package.json'); console.log('version='+p.version); console.log('test script='+(p.scripts.test||'not defined'))"
+===== ALL getLastSessionModel CALL SITES =====
+open-sse/services/combo/comboSetup.ts-13-import {
+open-sse/services/combo/comboSetup.ts-14-  resolveContextRelayConfig,
+open-sse/services/combo/comboSetup.ts-15-  resolveUniversalHandoffConfig,
+open-sse/services/combo/comboSetup.ts-16-  SKIP_UNIVERSAL_HANDOFF_FLAG,
+open-sse/services/combo/comboSetup.ts-17-} from "../contextHandoff.ts";
+open-sse/services/combo/comboSetup.ts:18:import { getLastSessionModel } from "../../../src/lib/db/contextHandoffs.ts";
+open-sse/services/combo/comboSetup.ts-19-import { applyComboAgentMiddleware } from "../comboAgentMiddleware.ts";
+open-sse/services/combo/comboSetup.ts-20-import { resolveComboSetupConfig, resolveComboTargetTimeoutMsForCombo } from "../comboConfig.ts";
+open-sse/services/combo/comboSetup.ts-21-import { resolveResilienceSettings } from "../../../src/lib/resilience/settings";
+open-sse/services/combo/comboSetup.ts-22-import { FETCH_TIMEOUT_MS } from "../../config/constants.ts";
+open-sse/services/combo/comboSetup.ts-23-import { deriveComboSessionKey } from "./autoStrategy.ts";
+--
+open-sse/services/combo/comboSetup.ts-62-  if (
+open-sse/services/combo/comboSetup.ts-63-    combo.context_cache_protection &&
+open-sse/services/combo/comboSetup.ts-64-    effectiveSessionId &&
+open-sse/services/combo/comboSetup.ts-65-    !(ctx.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+open-sse/services/combo/comboSetup.ts-66-  ) {
+open-sse/services/combo/comboSetup.ts:67:    const pinned = getLastSessionModel(effectiveSessionId, combo.name);
+open-sse/services/combo/comboSetup.ts-68-    if (pinned) {
+open-sse/services/combo/comboSetup.ts-69-      ctx.body = { ...ctx.body, model: pinned };
+open-sse/services/combo/comboSetup.ts-70-      pinnedModel = pinned;
+open-sse/services/combo/comboSetup.ts-71-      log.info("COMBO", `[#401] Context cache: pinned model=${pinned} (server-side)`);
+open-sse/services/combo/comboSetup.ts-72-    }
+--
+open-sse/services/combo/executeTargetAttempt.ts-38-  DEFAULT_UNIVERSAL_HANDOFF_CONFIG,
+open-sse/services/combo/executeTargetAttempt.ts-39-  type MessageLike,
+open-sse/services/combo/executeTargetAttempt.ts-40-} from "../contextHandoff.ts";
+open-sse/services/combo/executeTargetAttempt.ts-41-import {
+open-sse/services/combo/executeTargetAttempt.ts-42-  recordSessionModelUsage,
+open-sse/services/combo/executeTargetAttempt.ts:43:  getLastSessionModel,
+open-sse/services/combo/executeTargetAttempt.ts-44-  getHandoff,
+open-sse/services/combo/executeTargetAttempt.ts-45-} from "../../../src/lib/db/contextHandoffs.ts";
+open-sse/services/combo/executeTargetAttempt.ts-46-import { resolveModelLockoutSettings } from "../../../src/lib/resilience/modelLockoutSettings";
+open-sse/services/combo/executeTargetAttempt.ts-47-import { fetchCodexQuota } from "../codexQuotaFetcher.ts";
+open-sse/services/combo/executeTargetAttempt.ts-48-import { emit } from "../../../src/lib/events/eventBus";
+--
+open-sse/services/combo/executeTargetAttempt.ts-302-      i === 0 &&
+open-sse/services/combo/executeTargetAttempt.ts-303-      universalHandoffConfig.enabled &&
+open-sse/services/combo/executeTargetAttempt.ts-304-      deps.relayOptions?.sessionId &&
+open-sse/services/combo/executeTargetAttempt.ts-305-      !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+open-sse/services/combo/executeTargetAttempt.ts-306-    ) {
+open-sse/services/combo/executeTargetAttempt.ts:307:      const lastModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts-308-      if (lastModel && lastModel !== modelStr) {
+open-sse/services/combo/executeTargetAttempt.ts-309-        const existingHandoff = getHandoff(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts-310-        attemptBody = injectUniversalHandoffBody(
+open-sse/services/combo/executeTargetAttempt.ts-311-          attemptBody, // Use the cloned body to maintain isolation
+open-sse/services/combo/executeTargetAttempt.ts-312-          lastModel,
+--
+open-sse/services/combo/executeTargetAttempt.ts-571-      if (
+open-sse/services/combo/executeTargetAttempt.ts-572-        universalHandoffConfig.enabled &&
+open-sse/services/combo/executeTargetAttempt.ts-573-        deps.relayOptions?.sessionId &&
+open-sse/services/combo/executeTargetAttempt.ts-574-        !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+open-sse/services/combo/executeTargetAttempt.ts-575-      ) {
+open-sse/services/combo/executeTargetAttempt.ts:576:        const prevModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts-577-        recordSessionModelUsage(
+open-sse/services/combo/executeTargetAttempt.ts-578-          deps.relayOptions.sessionId,
+open-sse/services/combo/executeTargetAttempt.ts-579-          deps.combo.name,
+open-sse/services/combo/executeTargetAttempt.ts-580-          modelStr,
+open-sse/services/combo/executeTargetAttempt.ts-581-          provider,
+--
+src/lib/db/contextHandoffs.ts-201- *
+src/lib/db/contextHandoffs.ts-202- * @param sessionId - The session identifier.
+src/lib/db/contextHandoffs.ts-203- * @param comboName - The combo name.
+src/lib/db/contextHandoffs.ts-204- * @returns The model string, or null if no record exists.
+src/lib/db/contextHandoffs.ts-205- */
+src/lib/db/contextHandoffs.ts:206:export function getLastSessionModel(sessionId: string, comboName: string): string | null {
+src/lib/db/contextHandoffs.ts-207-  const db = getDbInstance() as unknown as DbLike;
+src/lib/db/contextHandoffs.ts-208-  const row = db
+src/lib/db/contextHandoffs.ts-209-    .prepare(
+src/lib/db/contextHandoffs.ts-210-      `SELECT model_str
+src/lib/db/contextHandoffs.ts-211-       FROM session_model_history
+--
+tests/integration/combo-matrix/context-relay-codex.test.ts-356-    `codex usage URL must NOT be fetched for openai provider; seen: ${JSON.stringify(seenUrls)}`
+tests/integration/combo-matrix/context-relay-codex.test.ts-357-  );
+tests/integration/combo-matrix/context-relay-codex.test.ts-358-
+tests/integration/combo-matrix/context-relay-codex.test.ts-359-  // No codex quota handoff record in DB.
+tests/integration/combo-matrix/context-relay-codex.test.ts-360-  // (The universal handoff also does not fire because no prior model is seeded,
+tests/integration/combo-matrix/context-relay-codex.test.ts:361:  // so getLastSessionModel returns null → no model switch detected.)
+tests/integration/combo-matrix/context-relay-codex.test.ts-362-  const handoff = getHandoff(SESSION_ID, CONTROL_COMBO_NAME);
+tests/integration/combo-matrix/context-relay-codex.test.ts-363-  assert.equal(
+tests/integration/combo-matrix/context-relay-codex.test.ts-364-    handoff,
+tests/integration/combo-matrix/context-relay-codex.test.ts-365-    null,
+tests/integration/combo-matrix/context-relay-codex.test.ts-366-    "no handoff record must exist when provider is openai (codex block never entered)"
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-61-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-62-const COMBO_NAME = "m-relay-handoff";
+tests/integration/combo-matrix/context-relay-handoff.test.ts-63-// The session ID must use the external-session format: extractExternalSessionId in chat.ts
+tests/integration/combo-matrix/context-relay-handoff.test.ts-64-// reads "x-session-id" (not "x-omniroute-session-id") and prefixes the result with "ext:".
+tests/integration/combo-matrix/context-relay-handoff.test.ts-65-// We must seed session_model_history with this exact "ext:"-prefixed ID so that
+tests/integration/combo-matrix/context-relay-handoff.test.ts:66:// getLastSessionModel(relayOptions.sessionId, comboName) returns the prior model.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-67-const SESSION_HEADER_VALUE = "relay-handoff-session-001";
+tests/integration/combo-matrix/context-relay-handoff.test.ts-68-const SESSION_ID = `ext:${SESSION_HEADER_VALUE}`; // matches what extractExternalSessionId produces
+tests/integration/combo-matrix/context-relay-handoff.test.ts-69-const PREV_MODEL = "gemini/gemini-2.5-flash"; // the "old" model — must differ from combo target
+tests/integration/combo-matrix/context-relay-handoff.test.ts-70-const CURR_MODEL = "openai/gpt-4o-mini"; // the combo target model (provider/model format)
+tests/integration/combo-matrix/context-relay-handoff.test.ts-71-
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-153-  await h.cleanup();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-154-});
+tests/integration/combo-matrix/context-relay-handoff.test.ts-155-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-156-// ── Test 1: universal handoff fires on model switch ────────────────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts-157-//
+tests/integration/combo-matrix/context-relay-handoff.test.ts:158:// Seed session history so getLastSessionModel returns PREV_MODEL (gemini).
+tests/integration/combo-matrix/context-relay-handoff.test.ts-159-// Combo target is CURR_MODEL (openai). The switch is detected and
+tests/integration/combo-matrix/context-relay-handoff.test.ts-160-// maybeGenerateUniversalHandoff fires via setImmediate → calls handleSingleModel
+tests/integration/combo-matrix/context-relay-handoff.test.ts-161-// (extra upstream dispatch) → parses response → upsertHandoff writes to DB.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-162-//
+tests/integration/combo-matrix/context-relay-handoff.test.ts-163-// Observable 1: h.calls has ≥2 entries (main request + summary dispatch).
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-176-      // Single target — openai/gpt-4o-mini — so modelStr = CURR_MODEL
+tests/integration/combo-matrix/context-relay-handoff.test.ts-177-      { id: "rh-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" },
+tests/integration/combo-matrix/context-relay-handoff.test.ts-178-    ],
+tests/integration/combo-matrix/context-relay-handoff.test.ts-179-  });
+tests/integration/combo-matrix/context-relay-handoff.test.ts-180-
+tests/integration/combo-matrix/context-relay-handoff.test.ts:181:  // Seed the prior model usage so getLastSessionModel returns PREV_MODEL.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-182-  // universalHandoffConfig.enabled = true by DEFAULT_UNIVERSAL_HANDOFF_CONFIG.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-183-  recordSessionModelUsage(SESSION_ID, COMBO_NAME, PREV_MODEL, "gemini", undefined);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-184-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-185-  installHandoffAwareFetch();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-186-
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-210-  );
+tests/integration/combo-matrix/context-relay-handoff.test.ts-211-});
+tests/integration/combo-matrix/context-relay-handoff.test.ts-212-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-213-// ── Test 2: control — no model switch, handoff must NOT fire ──────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts-214-//
+tests/integration/combo-matrix/context-relay-handoff.test.ts:215:// DO NOT seed a prior model. getLastSessionModel returns null → prevModel is
+tests/integration/combo-matrix/context-relay-handoff.test.ts-216-// null → the `if (prevModel && prevModel !== modelStr)` branch is skipped →
+tests/integration/combo-matrix/context-relay-handoff.test.ts-217-// no handoff. The assertion FAILS if the code incorrectly fires a handoff.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-218-test("context-relay universal handoff: does NOT fire when no prior model is recorded (no switch)", async () => {
+tests/integration/combo-matrix/context-relay-handoff.test.ts-219-  await seedConnection("openai", { apiKey: "sk-openai-noswitch" });
+tests/integration/combo-matrix/context-relay-handoff.test.ts-220-
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-223-    strategy: "context-relay",
+tests/integration/combo-matrix/context-relay-handoff.test.ts-224-    config: { maxRetries: 0, retryDelayMs: 0, stickyRoundRobinLimit: 1 },
+tests/integration/combo-matrix/context-relay-handoff.test.ts-225-    models: [{ id: "ns-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+tests/integration/combo-matrix/context-relay-handoff.test.ts-226-  });
+tests/integration/combo-matrix/context-relay-handoff.test.ts-227-
+tests/integration/combo-matrix/context-relay-handoff.test.ts:228:  // No recordSessionModelUsage call → getLastSessionModel returns null → no switch.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-229-  installHandoffAwareFetch();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-230-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-231-  const r = await handleChat(relayRequest(true));
+tests/integration/combo-matrix/context-relay-handoff.test.ts-232-  assert.equal(r.status, 200);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-233-  await r.json();
+--
+tests/unit/combo-cache-invalidation.test.ts-184-  await combosDb.updateCombo(String(combo.id), {
+tests/unit/combo-cache-invalidation.test.ts-185-    name: "After Rename",
+tests/unit/combo-cache-invalidation.test.ts-186-    models: [{ provider: "openai", model: "gpt-4.1-mini" }],
+tests/unit/combo-cache-invalidation.test.ts-187-  });
+tests/unit/combo-cache-invalidation.test.ts-188-
+tests/unit/combo-cache-invalidation.test.ts:189:  assert.equal(contextHandoffsDb.getLastSessionModel("session-before", "Before Rename"), null);
+tests/unit/combo-cache-invalidation.test.ts:190:  assert.equal(contextHandoffsDb.getLastSessionModel("session-after", "After Rename"), null);
+tests/unit/combo-cache-invalidation.test.ts-191-});
+tests/unit/combo-cache-invalidation.test.ts-192-
+tests/unit/combo-cache-invalidation.test.ts-193-test("updateCombo does not clear session pins when models are omitted", async () => {
+tests/unit/combo-cache-invalidation.test.ts-194-  const combo = await combosDb.createCombo({
+tests/unit/combo-cache-invalidation.test.ts-195-    name: "Metadata Only",
+--
+tests/unit/combo-cache-invalidation.test.ts-203-  );
+tests/unit/combo-cache-invalidation.test.ts-204-
+tests/unit/combo-cache-invalidation.test.ts-205-  await combosDb.updateCombo(String(combo.id), { description: "metadata change" });
+tests/unit/combo-cache-invalidation.test.ts-206-
+tests/unit/combo-cache-invalidation.test.ts-207-  assert.equal(
+tests/unit/combo-cache-invalidation.test.ts:208:    contextHandoffsDb.getLastSessionModel("session-metadata", "Metadata Only"),
+tests/unit/combo-cache-invalidation.test.ts-209-    "openai/gpt-4.1"
+tests/unit/combo-cache-invalidation.test.ts-210-  );
+tests/unit/combo-cache-invalidation.test.ts-211-});
+--
+tests/unit/combo-context-relay.test.ts-383-  assert.equal(result.ok, true);
+tests/unit/combo-context-relay.test.ts-384-  assert.equal(usageCalls, 0);
+tests/unit/combo-context-relay.test.ts-385-  assert.equal(handoffDb.getHandoff(sessionId, "relay-empty-providers"), null);
+tests/unit/combo-context-relay.test.ts-386-});
+tests/unit/combo-context-relay.test.ts-387-
+tests/unit/combo-context-relay.test.ts:388:test("getLastSessionModel uses latest id as deterministic tie-breaker", async () => {
+tests/unit/combo-context-relay.test.ts-389-  const sessionId = "sess-model-history-tie";
+tests/unit/combo-context-relay.test.ts-390-  const comboName = "relay-model-history-tie";
+tests/unit/combo-context-relay.test.ts-391-
+tests/unit/combo-context-relay.test.ts-392-  handoffDb.recordSessionModelUsage(sessionId, comboName, "openai/old", "openai");
+tests/unit/combo-context-relay.test.ts-393-  handoffDb.recordSessionModelUsage(sessionId, comboName, "anthropic/new", "anthropic");
+--
+tests/unit/combo-context-relay.test.ts-399-       SET used_at = ?
+tests/unit/combo-context-relay.test.ts-400-       WHERE session_id = ? AND combo_name = ?`
+tests/unit/combo-context-relay.test.ts-401-    )
+tests/unit/combo-context-relay.test.ts-402-    .run("2026-05-26 12:00:00", sessionId, comboName);
+tests/unit/combo-context-relay.test.ts-403-
+tests/unit/combo-context-relay.test.ts:404:  assert.equal(handoffDb.getLastSessionModel(sessionId, comboName), "anthropic/new");
+tests/unit/combo-context-relay.test.ts-405-});
+tests/unit/combo-context-relay.test.ts-406-
+tests/unit/combo-context-relay.test.ts-407-test("handleComboChat universal handoff skips same-request fallback targets entirely", async () => {
+tests/unit/combo-context-relay.test.ts-408-  // #12227 follow-up: a same-request fallback target (i > 0) serves the SAME
+tests/unit/combo-context-relay.test.ts-409-  // client request the failed primary target would have served -- the client
+--
+tests/unit/combo-context-relay.test.ts-649-    "anthropic/claude-3-5-sonnet",
+tests/unit/combo-context-relay.test.ts-650-    "anthropic"
+tests/unit/combo-context-relay.test.ts-651-  );
+tests/unit/combo-context-relay.test.ts-652-
+tests/unit/combo-context-relay.test.ts-653-  // Sanity: pins exist
+tests/unit/combo-context-relay.test.ts:654:  assert.equal(handoffDb.getLastSessionModel("sess-A", comboName), "openai/gpt-4o");
+tests/unit/combo-context-relay.test.ts:655:  assert.equal(handoffDb.getLastSessionModel("sess-B", comboName), "anthropic/claude-3-5-sonnet");
+tests/unit/combo-context-relay.test.ts-656-
+tests/unit/combo-context-relay.test.ts-657-  // Clear pins for this combo
+tests/unit/combo-context-relay.test.ts-658-  const cleared = handoffDb.clearSessionModelHistoryForCombo(comboName);
+tests/unit/combo-context-relay.test.ts-659-  assert.ok(cleared >= 2, `should have cleared at least 2 entries, got ${cleared}`);
+tests/unit/combo-context-relay.test.ts-660-
+tests/unit/combo-context-relay.test.ts-661-  // Pins are gone
+tests/unit/combo-context-relay.test.ts:662:  assert.equal(handoffDb.getLastSessionModel("sess-A", comboName), null);
+tests/unit/combo-context-relay.test.ts:663:  assert.equal(handoffDb.getLastSessionModel("sess-B", comboName), null);
+tests/unit/combo-context-relay.test.ts-664-});
+tests/unit/combo-context-relay.test.ts-665-
+tests/unit/combo-context-relay.test.ts-666-test("clearSessionModelHistoryForCombo does not affect other combos", async () => {
+tests/unit/combo-context-relay.test.ts-667-  const comboA = "combo-keep";
+tests/unit/combo-context-relay.test.ts-668-  const comboB = "combo-clear";
+--
+tests/unit/combo-context-relay.test.ts-672-
+tests/unit/combo-context-relay.test.ts-673-  // Clear only comboB
+tests/unit/combo-context-relay.test.ts-674-  handoffDb.clearSessionModelHistoryForCombo(comboB);
+tests/unit/combo-context-relay.test.ts-675-
+tests/unit/combo-context-relay.test.ts-676-  // comboA is untouched
+tests/unit/combo-context-relay.test.ts:677:  assert.equal(handoffDb.getLastSessionModel("sess-1", comboA), "openai/gpt-4o");
+tests/unit/combo-context-relay.test.ts-678-  // comboB is cleared
+tests/unit/combo-context-relay.test.ts:679:  assert.equal(handoffDb.getLastSessionModel("sess-1", comboB), null);
+tests/unit/combo-context-relay.test.ts-680-});
+--
+tests/unit/combo/combo-context.test.ts-1-// tests/unit/combo/combo-context.test.ts
+tests/unit/combo/combo-context.test.ts-2-// Unit tests for the first extracted combo phase (god-file decomposition fase 1):
+tests/unit/combo/combo-context.test.ts-3-// createComboContext (combo/context.ts) + phaseComboSetup (combo/comboSetup.ts).
+tests/unit/combo/combo-context.test.ts:4:// The pinning-ON path (getLastSessionModel) is covered end-to-end by the existing combo
+tests/unit/combo/combo-context.test.ts-5-// characterization suite (combo-sessionless-pin-3825, combo-config, etc.); here we exercise
+tests/unit/combo/combo-context.test.ts-6-// the pure path (context_cache_protection OFF, no settings -> no DB) and the body carrier.
+tests/unit/combo/combo-context.test.ts-7-import { test } from "node:test";
+tests/unit/combo/combo-context.test.ts-8-import assert from "node:assert/strict";
+tests/unit/combo/combo-context.test.ts-9-import { createComboContext } from "../../../open-sse/services/combo/context.ts";
+--
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-42-  // Seed pins for two different sessions sharing the SAME combo.
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-43-  handoffDb.recordSessionModelUsage("sessA-probe", comboName, "openai/gpt-4o", "openai");
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-44-  handoffDb.recordSessionModelUsage("sessB-probe", comboName, "anthropic/claude", "anthropic");
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-45-
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-46-  // Sanity: both pins exist before any failure is recorded.
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:47:  assert.equal(handoffDb.getLastSessionModel("sessA-probe", comboName), "openai/gpt-4o");
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:48:  assert.equal(handoffDb.getLastSessionModel("sessB-probe", comboName), "anthropic/claude");
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-49-
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-50-  // Only session A crosses the consecutive-failure threshold.
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-51-  let lastResult = { count: 0, pinClearedNow: false };
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-52-  for (let i = 0; i < failureTracker.COMBO_FAILURE_THRESHOLD; i++) {
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-53-    lastResult = failureTracker.recordComboFailure("sessA-probe", comboName);
+--
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-55-  assert.equal(lastResult.count, failureTracker.COMBO_FAILURE_THRESHOLD);
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-56-  assert.equal(lastResult.pinClearedNow, true, "threshold-cross should report a pin clear");
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-57-
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-58-  // The failing session's pin is cleared...
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-59-  assert.equal(
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:60:    handoffDb.getLastSessionModel("sessA-probe", comboName),
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-61-    null,
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-62-    "the failing session's own pin should be cleared"
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-63-  );
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-64-  // ...but the healthy, unrelated session's pin on the SAME combo survives.
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-65-  assert.equal(
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:66:    handoffDb.getLastSessionModel("sessB-probe", comboName),
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-67-    "anthropic/claude",
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-68-    "an unrelated session's pin on the same combo must NOT be dropped"
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-69-  );
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-70-});
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-71-
+--
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-79-
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-80-  for (let i = 0; i < failureTracker.COMBO_FAILURE_THRESHOLD; i++) {
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-81-    failureTracker.recordComboFailure("sessC-probe", failingCombo);
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-82-  }
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-83-
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:84:  assert.equal(handoffDb.getLastSessionModel("sessC-probe", failingCombo), null);
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-85-  assert.equal(
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts:86:    handoffDb.getLastSessionModel("sessC-probe", otherCombo),
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-87-    "anthropic/claude",
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-88-    "the same session's pin on a DIFFERENT combo must not be cleared"
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-89-  );
+tests/unit/combo/combo-failure-tracker-session-isolation.test.ts-90-});
+===== CONNECTION SEEDING AND TARGET CONFIG =====
+tests/integration/combo-matrix/decision-matrix.test.ts-63-        id: `${name}-openai`,
+tests/integration/combo-matrix/decision-matrix.test.ts-64-        kind: "model",
+tests/integration/combo-matrix/decision-matrix.test.ts-65-        providerId: "openai",
+tests/integration/combo-matrix/decision-matrix.test.ts-66-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/decision-matrix.test.ts:67:        connectionId: openaiId,
+tests/integration/combo-matrix/decision-matrix.test.ts-68-      },
+tests/integration/combo-matrix/decision-matrix.test.ts-69-      {
+tests/integration/combo-matrix/decision-matrix.test.ts-70-        id: `${name}-claude`,
+tests/integration/combo-matrix/decision-matrix.test.ts-71-        kind: "model",
+tests/integration/combo-matrix/decision-matrix.test.ts-72-        providerId: "claude",
+tests/integration/combo-matrix/decision-matrix.test.ts-73-        model: "claude-sonnet-4-6",
+tests/integration/combo-matrix/decision-matrix.test.ts:74:        connectionId: claudeId,
+tests/integration/combo-matrix/decision-matrix.test.ts-75-      },
+tests/integration/combo-matrix/decision-matrix.test.ts-76-    ],
+tests/integration/combo-matrix/decision-matrix.test.ts-77-  });
+tests/integration/combo-matrix/decision-matrix.test.ts-78-}
+--
+tests/integration/combo-matrix/quota-aware.test.ts-76-        id: "ra-openai",
+tests/integration/combo-matrix/quota-aware.test.ts-77-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-78-        providerId: "openai",
+tests/integration/combo-matrix/quota-aware.test.ts-79-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/quota-aware.test.ts:80:        connectionId: openaiConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-81-      },
+tests/integration/combo-matrix/quota-aware.test.ts-82-      // claude SECOND — must win (no fetcher → neutral score 0.5 > -Infinity)
+tests/integration/combo-matrix/quota-aware.test.ts-83-      {
+tests/integration/combo-matrix/quota-aware.test.ts-84-        id: "ra-claude",
+tests/integration/combo-matrix/quota-aware.test.ts-85-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-86-        providerId: "claude",
+tests/integration/combo-matrix/quota-aware.test.ts-87-        model: "claude-sonnet-4-6",
+tests/integration/combo-matrix/quota-aware.test.ts:88:        connectionId: claudeConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-89-      },
+tests/integration/combo-matrix/quota-aware.test.ts-90-    ],
+tests/integration/combo-matrix/quota-aware.test.ts-91-  });
+tests/integration/combo-matrix/quota-aware.test.ts-92-  h.installRecordingFetch();
+--
+tests/integration/combo-matrix/quota-aware.test.ts-140-        id: "rw-openai",
+tests/integration/combo-matrix/quota-aware.test.ts-141-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-142-        providerId: "openai",
+tests/integration/combo-matrix/quota-aware.test.ts-143-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/quota-aware.test.ts:144:        connectionId: openaiConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-145-      },
+tests/integration/combo-matrix/quota-aware.test.ts-146-      // gemini SECOND — must win (earliest reset → smallest resetMs)
+tests/integration/combo-matrix/quota-aware.test.ts-147-      {
+tests/integration/combo-matrix/quota-aware.test.ts-148-        id: "rw-gemini",
+tests/integration/combo-matrix/quota-aware.test.ts-149-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-150-        providerId: "gemini",
+tests/integration/combo-matrix/quota-aware.test.ts-151-        model: "gemini-2.5-flash",
+tests/integration/combo-matrix/quota-aware.test.ts:152:        connectionId: geminiConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-153-      },
+tests/integration/combo-matrix/quota-aware.test.ts-154-    ],
+tests/integration/combo-matrix/quota-aware.test.ts-155-  });
+tests/integration/combo-matrix/quota-aware.test.ts-156-  h.installRecordingFetch();
+--
+tests/integration/combo-matrix/quota-aware.test.ts-203-        id: "hr-openai",
+tests/integration/combo-matrix/quota-aware.test.ts-204-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-205-        providerId: "openai",
+tests/integration/combo-matrix/quota-aware.test.ts-206-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/quota-aware.test.ts:207:        connectionId: openaiConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-208-      },
+tests/integration/combo-matrix/quota-aware.test.ts-209-      // claude SECOND — must win (saturation 0.1 → headroom 0.9, the most free capacity)
+tests/integration/combo-matrix/quota-aware.test.ts-210-      {
+tests/integration/combo-matrix/quota-aware.test.ts-211-        id: "hr-claude",
+tests/integration/combo-matrix/quota-aware.test.ts-212-        kind: "model",
+tests/integration/combo-matrix/quota-aware.test.ts-213-        providerId: "claude",
+tests/integration/combo-matrix/quota-aware.test.ts-214-        model: "claude-sonnet-4-6",
+tests/integration/combo-matrix/quota-aware.test.ts:215:        connectionId: claudeConn.id,
+tests/integration/combo-matrix/quota-aware.test.ts-216-      },
+tests/integration/combo-matrix/quota-aware.test.ts-217-    ],
+tests/integration/combo-matrix/quota-aware.test.ts-218-  });
+tests/integration/combo-matrix/quota-aware.test.ts-219-  h.installRecordingFetch();
+--
+tests/integration/combo-matrix/quota-share.test.ts-99-        id: "qs-drr-openai",
+tests/integration/combo-matrix/quota-share.test.ts-100-        kind: "model",
+tests/integration/combo-matrix/quota-share.test.ts-101-        providerId: "openai",
+tests/integration/combo-matrix/quota-share.test.ts-102-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/quota-share.test.ts:103:        connectionId: openaiConn.id,
+tests/integration/combo-matrix/quota-share.test.ts-104-      },
+tests/integration/combo-matrix/quota-share.test.ts-105-      // gemini SECOND in definition — DRR must pick it on alternate rounds
+tests/integration/combo-matrix/quota-share.test.ts-106-      {
+tests/integration/combo-matrix/quota-share.test.ts-107-        id: "qs-drr-gemini",
+tests/integration/combo-matrix/quota-share.test.ts-108-        kind: "model",
+tests/integration/combo-matrix/quota-share.test.ts-109-        providerId: "gemini",
+tests/integration/combo-matrix/quota-share.test.ts-110-        model: "gemini-2.5-flash",
+tests/integration/combo-matrix/quota-share.test.ts:111:        connectionId: geminiConn.id,
+tests/integration/combo-matrix/quota-share.test.ts-112-      },
+tests/integration/combo-matrix/quota-share.test.ts-113-    ],
+tests/integration/combo-matrix/quota-share.test.ts-114-  });
+tests/integration/combo-matrix/quota-share.test.ts-115-  h.installRecordingFetch();
+--
+tests/integration/combo-matrix/quota-share.test.ts-173-        id: "qs-sat-openai",
+tests/integration/combo-matrix/quota-share.test.ts-174-        kind: "model",
+tests/integration/combo-matrix/quota-share.test.ts-175-        providerId: "openai",
+tests/integration/combo-matrix/quota-share.test.ts-176-        model: "gpt-4o-mini",
+tests/integration/combo-matrix/quota-share.test.ts:177:        connectionId: openaiConn.id,
+tests/integration/combo-matrix/quota-share.test.ts-178-      },
+tests/integration/combo-matrix/quota-share.test.ts-179-      // gemini SECOND — must win (no saturation recorded → eligible)
+tests/integration/combo-matrix/quota-share.test.ts-180-      {
+tests/integration/combo-matrix/quota-share.test.ts-181-        id: "qs-sat-gemini",
+tests/integration/combo-matrix/quota-share.test.ts-182-        kind: "model",
+tests/integration/combo-matrix/quota-share.test.ts-183-        providerId: "gemini",
+tests/integration/combo-matrix/quota-share.test.ts-184-        model: "gemini-2.5-flash",
+tests/integration/combo-matrix/quota-share.test.ts:185:        connectionId: geminiConn.id,
+tests/integration/combo-matrix/quota-share.test.ts-186-      },
+tests/integration/combo-matrix/quota-share.test.ts-187-    ],
+tests/integration/combo-matrix/quota-share.test.ts-188-  });
+tests/integration/combo-matrix/quota-share.test.ts-189-  h.installRecordingFetch();
+===== CURRENT TEST COPY STATUS =====
+-bash: node: command not found
+Connection to 89.168.125.238 closed.
+PS C:\WINDOWS\system32>
