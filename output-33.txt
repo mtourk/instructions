@@ -1,0 +1,93 @@
+
+[opc@litellm-gateway ~]$ podman exec omniroute sh -c 'echo "=== CLI documentation ==="; grep -n -i -E -B 3 -A 5 "reset-password|setup --password|INITIAL_PASSWORD" /app/docs/reference/CLI-TOOLS.md /app/docs/reference/ENVIRONMENT.md /app/docs/guides/SELF_HOST_GUIDE.md 2>/dev/null | head -100'
+=== CLI documentation ===
+/app/docs/reference/CLI-TOOLS.md-617-omniroute doctor                       # Check config, DB, ports, runtime
+/app/docs/reference/CLI-TOOLS.md-618-omniroute providers list               # Configured provider connections
+/app/docs/reference/CLI-TOOLS.md-619-omniroute providers test-all           # Test every active connection
+/app/docs/reference/CLI-TOOLS.md:620:omniroute reset-password               # Reset the admin password
+/app/docs/reference/CLI-TOOLS.md-621-omniroute logs                         # Stream request logs
+/app/docs/reference/CLI-TOOLS.md-622-omniroute health                       # Detailed health (breakers, cache, memory)
+/app/docs/reference/CLI-TOOLS.md-623-omniroute --version                    # Print version
+/app/docs/reference/CLI-TOOLS.md-624-omniroute --help                       # Show all commands
+/app/docs/reference/CLI-TOOLS.md-625-```
+--
+/app/docs/reference/CLI-TOOLS.md-629-```bash
+/app/docs/reference/CLI-TOOLS.md-630-omniroute setup                        # Interactive setup wizard
+/app/docs/reference/CLI-TOOLS.md-631-omniroute setup --non-interactive      # CI/automation mode (reads env vars + flags)
+/app/docs/reference/CLI-TOOLS.md:632:omniroute setup --password '<value>'   # Set admin password directly
+/app/docs/reference/CLI-TOOLS.md-633-omniroute setup --add-provider \
+/app/docs/reference/CLI-TOOLS.md-634-  --provider openai \
+/app/docs/reference/CLI-TOOLS.md-635-  --api-key '<value>' \
+/app/docs/reference/CLI-TOOLS.md-636-  --test-provider                      # Add and test a provider in one shot
+/app/docs/reference/CLI-TOOLS.md-637-```
+--
+/app/docs/reference/CLI-TOOLS.md-692-### Recovery & Reset
+/app/docs/reference/CLI-TOOLS.md-693-
+/app/docs/reference/CLI-TOOLS.md-694-```bash
+/app/docs/reference/CLI-TOOLS.md:695:omniroute reset-password                # Reset the admin password (also: omniroute-reset-password)
+/app/docs/reference/CLI-TOOLS.md-696-omniroute reset-encrypted-columns       # Show warning + dry-run for encrypted credential reset
+/app/docs/reference/CLI-TOOLS.md-697-omniroute reset-encrypted-columns --force  # Actually null out encrypted credentials in SQLite
+/app/docs/reference/CLI-TOOLS.md-698-```
+/app/docs/reference/CLI-TOOLS.md-699-
+/app/docs/reference/CLI-TOOLS.md-700-### Credential Export (⚠ handle with care)
+--
+/app/docs/reference/ENVIRONMENT.md-57-| ---------------------------- | -------------------- | ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+/app/docs/reference/ENVIRONMENT.md-58-| `JWT_SECRET`                 | **Yes**              | _(none)_          | `src/lib/auth`                                     | Signs/verifies all dashboard session cookies (JWT). Generate with `openssl rand -base64 48`.                                                                                                                                                                                                                                                                       |
+/app/docs/reference/ENVIRONMENT.md-59-| `API_KEY_SECRET`             | **Yes**              | _(none)_          | `src/lib/db/apiKeys.ts`                            | AES encryption key for API key values at rest in SQLite. Generate with `openssl rand -hex 32`.                                                                                                                                                                                                                                                                     |
+/app/docs/reference/ENVIRONMENT.md:60:| `INITIAL_PASSWORD`           | **Yes**              | `CHANGEME`        | Bootstrap script                                   | Sets the initial admin dashboard password (matches `.env.example` default — kept obviously insecure to force a change). **Change before first use.** After login, change via Dashboard → Settings → Security.                                                                                                                                                      |
+/app/docs/reference/ENVIRONMENT.md-61-| `OMNIROUTE_WS_BRIDGE_SECRET` | **Yes** (production) | _(unset)_         | `src/app/api/internal/codex-responses-ws/route.ts` | Shared secret for the internal Codex Responses WebSocket bridge. Authenticates bridge requests between the Electron/browser WS relay and OmniRoute. ⚠️ **REQUIRED in production — when unset, all WS bridge requests are rejected.** Generate with `openssl rand -base64 32`.                                                                                      |
+/app/docs/reference/ENVIRONMENT.md-62-| `OMNIROUTE_SW_BUILD_ID` | No | _(git SHA)_ | `next.config.mjs`, `scripts/build/assembleStandalone.mjs` | Explicit service-worker cache-busting id for the PWA shell (#11779); first in the resolution chain. |
+/app/docs/reference/ENVIRONMENT.md-63-| `SOURCE_VERSION` | No | _(unset)_ | `next.config.mjs`, `scripts/build/assembleStandalone.mjs` | Second in the chain — set by PaaS builders (e.g. Heroku-style) as the deployed commit. |
+/app/docs/reference/ENVIRONMENT.md-64-| `NEXT_PUBLIC_SW_BUILD_ID` | No | _(derived)_ | `src/shared/components/PwaRegister.tsx` | Build-time public value the client uses to register `/sw.js?v=…`; derived from the two above, then the git SHA. |
+/app/docs/reference/ENVIRONMENT.md-65-| `OMNIROUTE_PEER_STAMP_TOKEN` | No (auto)            | _(auto per boot)_ | `src/server/authz/policies/management.ts`          | Per-process secret proving the trusted peer-IP stamp came from OmniRoute's own HTTP server (`scripts/dev/peer-stamp.mjs`). The authz middleware trusts request locality (loopback/LAN gating of LOCAL_ONLY routes) only when the stamp carries this token. Auto-generated each boot — leave unset; only pin it for multi-process setups that must share the stamp. |
+--
+/app/docs/reference/ENVIRONMENT.md-71-# Generate all four secrets at once:
+/app/docs/reference/ENVIRONMENT.md-72-echo "JWT_SECRET=$(openssl rand -base64 48)"
+/app/docs/reference/ENVIRONMENT.md-73-echo "API_KEY_SECRET=$(openssl rand -hex 32)"
+/app/docs/reference/ENVIRONMENT.md:74:echo "INITIAL_PASSWORD=$(openssl rand -base64 16)"
+/app/docs/reference/ENVIRONMENT.md-75-echo "OMNIROUTE_WS_BRIDGE_SECRET=$(openssl rand -base64 32)"
+/app/docs/reference/ENVIRONMENT.md-76-```
+/app/docs/reference/ENVIRONMENT.md-77-
+/app/docs/reference/ENVIRONMENT.md-78-> [!CAUTION]
+/app/docs/reference/ENVIRONMENT.md-79-> Never commit `.env` files with real secrets to version control. The `.gitignore` already excludes `.env`, but verify before pushing.
+--
+/app/docs/reference/ENVIRONMENT.md-1327-```bash
+/app/docs/reference/ENVIRONMENT.md-1328-JWT_SECRET=$(openssl rand -base64 48)
+/app/docs/reference/ENVIRONMENT.md-1329-API_KEY_SECRET=$(openssl rand -hex 32)
+/app/docs/reference/ENVIRONMENT.md:1330:INITIAL_PASSWORD=dev123
+/app/docs/reference/ENVIRONMENT.md-1331-PORT=20128
+/app/docs/reference/ENVIRONMENT.md-1332-NODE_ENV=development
+/app/docs/reference/ENVIRONMENT.md-1333-```
+/app/docs/reference/ENVIRONMENT.md-1334-
+/app/docs/reference/ENVIRONMENT.md-1335-### Docker Production
+--
+/app/docs/reference/ENVIRONMENT.md-1337-```bash
+/app/docs/reference/ENVIRONMENT.md-1338-JWT_SECRET=<generated>
+/app/docs/reference/ENVIRONMENT.md-1339-API_KEY_SECRET=<generated>
+/app/docs/reference/ENVIRONMENT.md:1340:INITIAL_PASSWORD=<generated>
+/app/docs/reference/ENVIRONMENT.md-1341-STORAGE_ENCRYPTION_KEY=<generated>
+/app/docs/reference/ENVIRONMENT.md-1342-DATA_DIR=/data
+/app/docs/reference/ENVIRONMENT.md-1343-PORT=20128
+/app/docs/reference/ENVIRONMENT.md-1344-API_PORT=20129
+/app/docs/reference/ENVIRONMENT.md-1345-NODE_ENV=production
+--
+/app/docs/reference/ENVIRONMENT.md-1356-```bash
+/app/docs/reference/ENVIRONMENT.md-1357-JWT_SECRET=test-jwt-secret-for-ci
+/app/docs/reference/ENVIRONMENT.md-1358-API_KEY_SECRET=test-api-key-secret-for-ci
+/app/docs/reference/ENVIRONMENT.md:1359:INITIAL_PASSWORD=testpass
+/app/docs/reference/ENVIRONMENT.md-1360-NODE_ENV=production
+/app/docs/reference/ENVIRONMENT.md-1361-OMNIROUTE_DISABLE_BACKGROUND_SERVICES=true
+/app/docs/reference/ENVIRONMENT.md-1362-APP_LOG_TO_FILE=false
+/app/docs/reference/ENVIRONMENT.md-1363-```
+/app/docs/reference/ENVIRONMENT.md-1364-
+--
+/app/docs/reference/ENVIRONMENT.md-1584-| Variable                               | Default                          | Source File                               | Description                                                                                                                                                                                                                                |
+/app/docs/reference/ENVIRONMENT.md-1585-| -------------------------------------- | -------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+/app/docs/reference/ENVIRONMENT.md-1586-| `OMNIROUTE_E2E_BOOTSTRAP_MODE`         | `auth`                           | `scripts/dev/run-next-playwright.mjs`     | E2E bootstrap mode (`auth`, `fresh`, `reuse`) for the Playwright runner.                                                                                                                                                                   |
+/app/docs/reference/ENVIRONMENT.md:1587:| `OMNIROUTE_E2E_PASSWORD`               | falls back to `INITIAL_PASSWORD` | `scripts/dev/run-next-playwright.mjs`     | Admin password injected into the Playwright environment.                                                                                                                                                                                   |
+/app/docs/reference/ENVIRONMENT.md-1588-| `OMNIROUTE_DISABLE_LOCAL_HEALTHCHECK`  | `true`                           | `scripts/dev/run-next-playwright.mjs`     | Disable the local healthcheck poll during Playwright runs.                                                                                                                                                                                 |
+/app/docs/reference/ENVIRONMENT.md-1589-| `OMNIROUTE_DISABLE_TOKEN_HEALTHCHECK`  | `true`                           | `scripts/dev/run-next-playwright.mjs`     | Disable the OAuth token healthcheck loop during tests.                                                                                                                                                                                     |
+/app/docs/reference/ENVIRONMENT.md-1590-| `OMNIROUTE_HEALTHCHECK_SKIP_PROVIDERS` | _(unset)_                        | `src/lib/tokenHealthCheck.ts`             | Comma-separated providers excluded from the proactive token-refresh sweep (e.g. `codex,openai`). Targeted alternative to fully disabling the healthcheck — short-TTL providers keep refreshing while cascade providers stay reactive-only. |
+/app/docs/reference/ENVIRONMENT.md-1591-| `OMNIROUTE_HIDE_HEALTHCHECK_LOGS`      | `true`                           | `scripts/dev/run-next-playwright.mjs`     | Silence healthcheck noise in Playwright stdout.                                                                                                                                                                                            |
+/app/docs/reference/ENVIRONMENT.md-1592-| `OMNIROUTE_PLAYWRIGHT_SKIP_BUILD`      | `0`                              | `scripts/dev/run-next-playwright.mjs`     | Skip the Next.js production build before Playwright starts (CI optimization).                                                                                                                                                              |
+[opc@litellm-gateway ~]$
