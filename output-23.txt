@@ -1,0 +1,263 @@
+
+cd /home/opc/OmniRoute-source && \
+echo '===== HANDOFF INJECTION AND CONSUMPTION =====' && \
+grep -R -n -C 10 \
+  --include='*.ts' \
+  -E 'injectUniversalHandoffBody|deleteHandoff\(|getHandoff\(' \
+  open-sse src tests/integration/combo-matrix/context-relay-handoff.test.ts \
+  2>/dev/null | head -240 && \
+echo '===== ISOLATED NODE RUNTIME =====' && \
+podman run --rm docker.io/library/node:22-alpine node --version
+===== HANDOFF INJECTION AND CONSUMPTION =====
+open-sse/services/combo/executeTargetAttempt.ts-26-} from "../../utils/error.ts";
+open-sse/services/combo/executeTargetAttempt.ts-27-import { recordComboFailure, clearComboFailureTracking } from "./failureTracker.ts";
+open-sse/services/combo/executeTargetAttempt.ts-28-import { recordComboRequest, getComboMetrics } from "../comboMetrics.ts";
+open-sse/services/combo/executeTargetAttempt.ts-29-import {
+open-sse/services/combo/executeTargetAttempt.ts-30-  expandComboSystemPromptIfPresent,
+open-sse/services/combo/executeTargetAttempt.ts-31-  resolveTargetFingerprint,
+open-sse/services/combo/executeTargetAttempt.ts-32-} from "../comboAgentMiddleware.ts";
+open-sse/services/combo/executeTargetAttempt.ts-33-import {
+open-sse/services/combo/executeTargetAttempt.ts-34-  maybeGenerateHandoff,
+open-sse/services/combo/executeTargetAttempt.ts-35-  maybeGenerateUniversalHandoff,
+open-sse/services/combo/executeTargetAttempt.ts:36:  injectUniversalHandoffBody,
+open-sse/services/combo/executeTargetAttempt.ts-37-  SKIP_UNIVERSAL_HANDOFF_FLAG,
+open-sse/services/combo/executeTargetAttempt.ts-38-  DEFAULT_UNIVERSAL_HANDOFF_CONFIG,
+open-sse/services/combo/executeTargetAttempt.ts-39-  type MessageLike,
+open-sse/services/combo/executeTargetAttempt.ts-40-} from "../contextHandoff.ts";
+open-sse/services/combo/executeTargetAttempt.ts-41-import {
+open-sse/services/combo/executeTargetAttempt.ts-42-  recordSessionModelUsage,
+open-sse/services/combo/executeTargetAttempt.ts-43-  getLastSessionModel,
+open-sse/services/combo/executeTargetAttempt.ts-44-  getHandoff,
+open-sse/services/combo/executeTargetAttempt.ts-45-} from "../../../src/lib/db/contextHandoffs.ts";
+open-sse/services/combo/executeTargetAttempt.ts-46-import { resolveModelLockoutSettings } from "../../../src/lib/resilience/modelLockoutSettings";
+--
+open-sse/services/combo/executeTargetAttempt.ts-299-    // note, which weaker fallback models have been observed treating as license
+open-sse/services/combo/executeTargetAttempt.ts-300-    // to fabricate content instead of answering the request (#12227 follow-up).
+open-sse/services/combo/executeTargetAttempt.ts-301-    if (
+open-sse/services/combo/executeTargetAttempt.ts-302-      i === 0 &&
+open-sse/services/combo/executeTargetAttempt.ts-303-      universalHandoffConfig.enabled &&
+open-sse/services/combo/executeTargetAttempt.ts-304-      deps.relayOptions?.sessionId &&
+open-sse/services/combo/executeTargetAttempt.ts-305-      !(deps.body as Record<string, unknown>)?.[SKIP_UNIVERSAL_HANDOFF_FLAG]
+open-sse/services/combo/executeTargetAttempt.ts-306-    ) {
+open-sse/services/combo/executeTargetAttempt.ts-307-      const lastModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts-308-      if (lastModel && lastModel !== modelStr) {
+open-sse/services/combo/executeTargetAttempt.ts:309:        const existingHandoff = getHandoff(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts:310:        attemptBody = injectUniversalHandoffBody(
+open-sse/services/combo/executeTargetAttempt.ts-311-          attemptBody, // Use the cloned body to maintain isolation
+open-sse/services/combo/executeTargetAttempt.ts-312-          lastModel,
+open-sse/services/combo/executeTargetAttempt.ts-313-          modelStr,
+open-sse/services/combo/executeTargetAttempt.ts-314-          `Model routing: ${lastModel} → ${modelStr}`,
+open-sse/services/combo/executeTargetAttempt.ts-315-          existingHandoff,
+open-sse/services/combo/executeTargetAttempt.ts-316-          universalHandoffConfig.relayMode,
+open-sse/services/combo/executeTargetAttempt.ts-317-          deps.sourceFormat
+open-sse/services/combo/executeTargetAttempt.ts-318-        );
+open-sse/services/combo/executeTargetAttempt.ts-319-      }
+open-sse/services/combo/executeTargetAttempt.ts-320-    }
+--
+open-sse/services/contextHandoff.ts-660-  previousModel: string | null;
+open-sse/services/contextHandoff.ts-661-  currentModel: string;
+open-sse/services/contextHandoff.ts-662-  universalConfig: UniversalHandoffConfig;
+open-sse/services/contextHandoff.ts-663-}): "generate" | "inject" | "skip" {
+open-sse/services/contextHandoff.ts-664-  if (!options.universalConfig.enabled) return "skip";
+open-sse/services/contextHandoff.ts-665-  if (!options.previousModel) return "skip";
+open-sse/services/contextHandoff.ts-666-  if (options.previousModel === options.currentModel) return "skip";
+open-sse/services/contextHandoff.ts-667-
+open-sse/services/contextHandoff.ts-668-  // Check if handoff already exists for this session/combo
+open-sse/services/contextHandoff.ts-669-  if (options.sessionId) {
+open-sse/services/contextHandoff.ts:670:    const existing = getHandoff(options.sessionId, options.comboName);
+open-sse/services/contextHandoff.ts-671-    if (existing && existing.summary) return "inject";
+open-sse/services/contextHandoff.ts-672-  }
+open-sse/services/contextHandoff.ts-673-
+open-sse/services/contextHandoff.ts-674-  return "generate";
+open-sse/services/contextHandoff.ts-675-}
+open-sse/services/contextHandoff.ts-676-
+open-sse/services/contextHandoff.ts-677-// #11552 — universal-handoff regeneration backoff.
+open-sse/services/contextHandoff.ts-678-//
+open-sse/services/contextHandoff.ts-679-// A universal handoff whose summary comes back unparseable persists NOTHING, so
+open-sse/services/contextHandoff.ts-680-// `shouldGenerateUniversalHandoff` keeps answering "generate" and the very next
+--
+open-sse/services/contextHandoff.ts-903-        if (process.env.NODE_ENV !== "test") {
+open-sse/services/contextHandoff.ts-904-          console.warn("[universal-handoff] Generation failed:", err?.message || err);
+open-sse/services/contextHandoff.ts-905-        }
+open-sse/services/contextHandoff.ts-906-      })
+open-sse/services/contextHandoff.ts-907-      .finally(() => {
+open-sse/services/contextHandoff.ts-908-        inflightHandoffGenerations.delete(inflightKey);
+open-sse/services/contextHandoff.ts-909-      });
+open-sse/services/contextHandoff.ts-910-  });
+open-sse/services/contextHandoff.ts-911-}
+open-sse/services/contextHandoff.ts-912-
+open-sse/services/contextHandoff.ts:913:export function injectUniversalHandoffBody(
+open-sse/services/contextHandoff.ts-914-  body: Record<string, unknown>,
+open-sse/services/contextHandoff.ts-915-  prevModel: string,
+open-sse/services/contextHandoff.ts-916-  currModel: string,
+open-sse/services/contextHandoff.ts-917-  reason: string,
+open-sse/services/contextHandoff.ts-918-  existingPayload?: HandoffPayload | null,
+open-sse/services/contextHandoff.ts-919-  _relayMode?: "schema-locked" | "standard",
+open-sse/services/contextHandoff.ts-920-  sourceFormat?: string | null
+open-sse/services/contextHandoff.ts-921-): Record<string, unknown> {
+open-sse/services/contextHandoff.ts-922-  const handoffContent = buildUniversalHandoffSystemMessage(
+open-sse/services/contextHandoff.ts-923-    prevModel,
+--
+src/lib/db/contextHandoffs.ts-112-    payload.messageCount,
+src/lib/db/contextHandoffs.ts-113-    payload.model,
+src/lib/db/contextHandoffs.ts-114-    payload.lastModel || null,
+src/lib/db/contextHandoffs.ts-115-    payload.warningThresholdPct,
+src/lib/db/contextHandoffs.ts-116-    payload.generatedAt,
+src/lib/db/contextHandoffs.ts-117-    payload.expiresAt,
+src/lib/db/contextHandoffs.ts-118-    createdAt
+src/lib/db/contextHandoffs.ts-119-  );
+src/lib/db/contextHandoffs.ts-120-}
+src/lib/db/contextHandoffs.ts-121-
+src/lib/db/contextHandoffs.ts:122:export function getHandoff(sessionId: string, comboName: string): HandoffPayload | null {
+src/lib/db/contextHandoffs.ts-123-  const db = getDbInstance() as unknown as DbLike;
+src/lib/db/contextHandoffs.ts-124-  const now = new Date().toISOString();
+src/lib/db/contextHandoffs.ts-125-  const row = db
+src/lib/db/contextHandoffs.ts-126-    .prepare(
+src/lib/db/contextHandoffs.ts-127-      `SELECT *
+src/lib/db/contextHandoffs.ts-128-       FROM context_handoffs
+src/lib/db/contextHandoffs.ts-129-       WHERE session_id = ? AND combo_name = ? AND expires_at > ?
+src/lib/db/contextHandoffs.ts-130-       ORDER BY created_at DESC
+src/lib/db/contextHandoffs.ts-131-       LIMIT 1`
+src/lib/db/contextHandoffs.ts-132-    )
+src/lib/db/contextHandoffs.ts-133-    .get(sessionId, comboName, now);
+src/lib/db/contextHandoffs.ts-134-
+src/lib/db/contextHandoffs.ts-135-  return toHandoffPayload(row);
+src/lib/db/contextHandoffs.ts-136-}
+src/lib/db/contextHandoffs.ts-137-
+src/lib/db/contextHandoffs.ts:138:export function deleteHandoff(sessionId: string, comboName: string): void {
+src/lib/db/contextHandoffs.ts-139-  const db = getDbInstance() as unknown as DbLike;
+src/lib/db/contextHandoffs.ts-140-  db.prepare("DELETE FROM context_handoffs WHERE session_id = ? AND combo_name = ?").run(
+src/lib/db/contextHandoffs.ts-141-    sessionId,
+src/lib/db/contextHandoffs.ts-142-    comboName
+src/lib/db/contextHandoffs.ts-143-  );
+src/lib/db/contextHandoffs.ts-144-}
+src/lib/db/contextHandoffs.ts-145-
+src/lib/db/contextHandoffs.ts-146-export function cleanupExpiredHandoffs(): number {
+src/lib/db/contextHandoffs.ts-147-  const nowMs = Date.now();
+src/lib/db/contextHandoffs.ts-148-  if (nowMs - lastCleanupAt < CLEANUP_THROTTLE_MS) {
+--
+src/sse/handlers/chat.ts-1910-        }
+src/sse/handlers/chat.ts-1911-        requestBody = connectionRouting.body;
+src/sse/handlers/chat.ts-1912-      }
+src/sse/handlers/chat.ts-1913-      let injectedHandoff = null;
+src/sse/handlers/chat.ts-1914-      if (
+src/sse/handlers/chat.ts-1915-        comboStrategy === "context-relay" &&
+src/sse/handlers/chat.ts-1916-        comboName &&
+src/sse/handlers/chat.ts-1917-        runtimeOptions.sessionId &&
+src/sse/handlers/chat.ts-1918-        body?._omnirouteSkipContextRelay !== true
+src/sse/handlers/chat.ts-1919-      ) {
+src/sse/handlers/chat.ts:1920:        const handoff = getHandoff(runtimeOptions.sessionId, comboName);
+src/sse/handlers/chat.ts-1921-        if (handoff && handoff.fromAccount !== credentials.connectionId) {
+src/sse/handlers/chat.ts-1922-          // Inject only after a real account switch. The combo loop itself cannot
+src/sse/handlers/chat.ts-1923-          // reliably detect this because account selection happens inside auth.
+src/sse/handlers/chat.ts-1924-          requestBody = injectHandoffIntoBody(requestBody, handoff, undefined, sourceFormat);
+src/sse/handlers/chat.ts-1925-          injectedHandoff = handoff;
+src/sse/handlers/chat.ts-1926-          log.info(
+src/sse/handlers/chat.ts-1927-            "CONTEXT_RELAY",
+src/sse/handlers/chat.ts-1928-            `Injecting handoff for session ${runtimeOptions.sessionId}: ${handoff.fromAccount.slice(
+src/sse/handlers/chat.ts-1929-              0,
+src/sse/handlers/chat.ts-1930-              8
+--
+src/sse/handlers/chat.ts-2096-      if (result.success) {
+src/sse/handlers/chat.ts-2097-        clearModelLock(provider, credentials.connectionId, model);
+src/sse/handlers/chat.ts-2098-        // #14359 — a real upstream success is authoritative: arm the healthy override.
+src/sse/handlers/chat.ts-2099-        markQuotaHealthy(credentials.connectionId);
+src/sse/handlers/chat.ts-2100-        // #12254: exactly-once breaker accounting — combo successes are recorded by
+src/sse/handlers/chat.ts-2101-        // combo.ts (recordProviderSuccess); live combo tests never touch the breaker.
+src/sse/handlers/chat.ts-2102-        if (classifyProviderBreakerResult(result, isCombo, forceLiveComboTest) === "success") {
+src/sse/handlers/chat.ts-2103-          breaker._onSuccess();
+src/sse/handlers/chat.ts-2104-        }
+src/sse/handlers/chat.ts-2105-        if (injectedHandoff && runtimeOptions.sessionId && comboName) {
+src/sse/handlers/chat.ts:2106:          deleteHandoff(runtimeOptions.sessionId, comboName);
+src/sse/handlers/chat.ts-2107-        }
+src/sse/handlers/chat.ts-2108-        if (telemetry) telemetry.startPhase("finalize");
+src/sse/handlers/chat.ts-2109-        if (telemetry) telemetry.endPhase();
+src/sse/handlers/chat.ts-2110-        const successResponse = withSelectedConnectionHeader(
+src/sse/handlers/chat.ts-2111-          result.response,
+src/sse/handlers/chat.ts-2112-          credentials?.connectionId
+src/sse/handlers/chat.ts-2113-        );
+src/sse/handlers/chat.ts-2114-        if (requestBody.stream === true) {
+src/sse/handlers/chat.ts-2115-          return wrapResponseWithOAuthSessionRelease(successResponse, releaseOAuthSession);
+src/sse/handlers/chat.ts-2116-        }
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-154-});
+tests/integration/combo-matrix/context-relay-handoff.test.ts-155-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-156-// ── Test 1: universal handoff fires on model switch ────────────────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts-157-//
+tests/integration/combo-matrix/context-relay-handoff.test.ts-158-// Seed session history so getLastSessionModel returns PREV_MODEL (gemini).
+tests/integration/combo-matrix/context-relay-handoff.test.ts-159-// Combo target is CURR_MODEL (openai). The switch is detected and
+tests/integration/combo-matrix/context-relay-handoff.test.ts-160-// maybeGenerateUniversalHandoff fires via setImmediate → calls handleSingleModel
+tests/integration/combo-matrix/context-relay-handoff.test.ts-161-// (extra upstream dispatch) → parses response → upsertHandoff writes to DB.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-162-//
+tests/integration/combo-matrix/context-relay-handoff.test.ts-163-// Observable 1: h.calls has ≥2 entries (main request + summary dispatch).
+tests/integration/combo-matrix/context-relay-handoff.test.ts:164:// Observable 2: getHandoff(sessionId, comboName) returns a record with a
+tests/integration/combo-matrix/context-relay-handoff.test.ts-165-//               non-empty .summary (proves the FULL path executed, not just the
+tests/integration/combo-matrix/context-relay-handoff.test.ts-166-//               dispatch). The assertion FAILS if the handoff did not fire.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-167-test("context-relay universal handoff: fires and writes handoff record on model switch", async () => {
+tests/integration/combo-matrix/context-relay-handoff.test.ts-168-  await seedConnection("openai", { apiKey: "sk-openai-handoff" });
+tests/integration/combo-matrix/context-relay-handoff.test.ts-169-  await seedConnection("gemini", { apiKey: "sk-gemini-handoff" });
+tests/integration/combo-matrix/context-relay-handoff.test.ts-170-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-171-  await combosDb.createCombo({
+tests/integration/combo-matrix/context-relay-handoff.test.ts-172-    name: COMBO_NAME,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-173-    strategy: "context-relay",
+tests/integration/combo-matrix/context-relay-handoff.test.ts-174-    config: { maxRetries: 0, retryDelayMs: 0, stickyRoundRobinLimit: 1 },
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-183-  recordSessionModelUsage(SESSION_ID, COMBO_NAME, PREV_MODEL, "gemini", undefined);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-184-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-185-  installHandoffAwareFetch();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-186-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-187-  const r = await handleChat(relayRequest(/* withSessionId */ true));
+tests/integration/combo-matrix/context-relay-handoff.test.ts-188-  assert.equal(r.status, 200, "main request must succeed");
+tests/integration/combo-matrix/context-relay-handoff.test.ts-189-  await r.json();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-190-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-191-  // Wait for the setImmediate + generateUniversalHandoffAsync to complete and
+tests/integration/combo-matrix/context-relay-handoff.test.ts-192-  // write the DB record. Poll for up to 2 s — typically resolves in <100 ms.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:193:  const handoff = await waitFor(() => getHandoff(SESSION_ID, COMBO_NAME), 2000);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-194-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-195-  assert.ok(
+tests/integration/combo-matrix/context-relay-handoff.test.ts-196-    handoff !== null,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-197-    "universal handoff record must be written to DB when a model switch is detected"
+tests/integration/combo-matrix/context-relay-handoff.test.ts-198-  );
+tests/integration/combo-matrix/context-relay-handoff.test.ts-199-  assert.ok(
+tests/integration/combo-matrix/context-relay-handoff.test.ts-200-    typeof handoff!.summary === "string" && handoff!.summary.length > 0,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-201-    `handoff.summary must be non-empty; got: ${JSON.stringify(handoff!.summary)}`
+tests/integration/combo-matrix/context-relay-handoff.test.ts-202-  );
+tests/integration/combo-matrix/context-relay-handoff.test.ts-203-  assert.equal(handoff!.comboName, COMBO_NAME, "handoff must be keyed to the correct combo");
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-228-  // No recordSessionModelUsage call → getLastSessionModel returns null → no switch.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-229-  installHandoffAwareFetch();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-230-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-231-  const r = await handleChat(relayRequest(true));
+tests/integration/combo-matrix/context-relay-handoff.test.ts-232-  assert.equal(r.status, 200);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-233-  await r.json();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-234-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-235-  // Give setImmediate time to fire if the bug were present.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-236-  await new Promise((res) => setTimeout(res, 250));
+tests/integration/combo-matrix/context-relay-handoff.test.ts-237-
+tests/integration/combo-matrix/context-relay-handoff.test.ts:238:  const handoff = getHandoff(SESSION_ID, COMBO_NAME);
+tests/integration/combo-matrix/context-relay-handoff.test.ts-239-  assert.equal(
+tests/integration/combo-matrix/context-relay-handoff.test.ts-240-    handoff,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-241-    null,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-242-    "handoff must NOT be written when no prior model exists (prevModel is null)"
+tests/integration/combo-matrix/context-relay-handoff.test.ts-243-  );
+tests/integration/combo-matrix/context-relay-handoff.test.ts-244-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-245-  // Only the main request — no extra summary dispatch.
+tests/integration/combo-matrix/context-relay-handoff.test.ts-246-  assert.equal(
+tests/integration/combo-matrix/context-relay-handoff.test.ts-247-    h.calls.length,
+tests/integration/combo-matrix/context-relay-handoff.test.ts-248-    1,
+--
+tests/integration/combo-matrix/context-relay-handoff.test.ts-269-
+tests/integration/combo-matrix/context-relay-handoff.test.ts-270-  installHandoffAwareFetch();
+tests/integration/combo-matrix/context-relay-handoff.test.ts-271-
+===== ISOLATED NODE RUNTIME =====
+Trying to pull docker.io/library/node:22-alpine...
+Getting image source signatures
+Copying blob 66fa63c7a061 done   |
+Copying blob a9986cd6f37d skipped: already exists
+Copying blob 87919ed734a3 done   |
+Copying blob 74849c662da7 done   |
+Copying config 0d459d0765 done   |
+Writing manifest to image destination
+v22.23.3
+[opc@litellm-gateway OmniRoute-source]$
+
