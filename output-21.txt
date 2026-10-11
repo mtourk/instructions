@@ -1,0 +1,230 @@
+
+[opc@litellm-gateway ~]$
+cd "$HOME/OmniRoute-source"
+
+echo '========== 1. FEATURE FLAG =========='
+grep -RInE \
+  'UNIVERSAL_CONTEXT_HANDOFF_ENABLED|function isFeatureFlagEnabled|isFeatureFlagEnabled' \
+  src open-sse \
+  --include='*.ts' --include='*.tsx' 2>/dev/null | head -70
+
+echo
+echo '========== 2. HANDOFF CALL SITES =========='
+grep -RInE \
+  'shouldGenerateUniversalHandoff|maybeGenerateUniversalHandoff|injectHandoffIntoBody|buildUniversalHandoffSystemMessage|recordSessionModelUsage|getLastSessionModel' \
+  src open-sse \
+  --include='*.ts' --include='*.tsx' 2>/dev/null | head -100
+
+echo
+echo '========== 3. EXISTING HANDOFF TEST COVERAGE =========='
+grep -nE \
+  'same model|model switch|connectionId|provider|enabled|inject|handoff' \
+  tests/integration/combo-matrix/context-relay-handoff.test.ts \
+  tests/integration/combo-matrix/context-relay-codex.test.ts \
+  tests/unit/chat-context-relay.test.ts 2>/dev/null | head -100
+
+echo
+echo '========== READ-ONLY REVIEW COMPLETE =========='
+========== 1. FEATURE FLAG ==========
+src/app/api/auth/login/route.ts:12:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/auth/login/route.ts:93:        isFeatureFlagEnabled("OMNIROUTE_OIDC_DISABLE_PASSWORD_LOGIN") ||
+src/app/api/internal/codex-responses-ws/route.ts:14:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/internal/codex-responses-ws/route.ts:483:  if (!isFeatureFlagEnabled("OMNIROUTE_CODEX_WS_ENABLED")) {
+src/app/api/providers/[id]/models/discovery/providerModelsConfig.ts:29:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/providers/[id]/models/discovery/providerModelsConfig.ts:447:    return isFeatureFlagEnabled("XAI_OAUTH_LIVE_MODEL_DISCOVERY") ? XAI_MODELS_CONFIG : undefined;
+src/app/api/radar/catalog/route.ts:15:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/catalog/route.ts:29:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/intel/route.ts:10:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/intel/route.ts:20:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/intel/sync/route.ts:10:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/intel/sync/route.ts:21:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/local-model-state/route.ts:18:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/local-model-state/route.ts:74:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) return error(404, "Not found");
+src/app/api/radar/offers/route.ts:8:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/offers/route.ts:18:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/offers/sync/route.ts:8:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/offers/sync/route.ts:19:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/referrals/route.ts:32:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/referrals/route.ts:48:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/settings/route.ts:29:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/settings/route.ts:64:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/settings/route.ts:101:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/status/route.ts:16:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/status/route.ts:44:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/sync-all/route.ts:13:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/sync-all/route.ts:24:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/radar/sync/route.ts:14:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/radar/sync/route.ts:29:  if (!isFeatureFlagEnabled("RADAR_ENABLED")) {
+src/app/api/settings/require-login/route.ts:3:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/settings/require-login/route.ts:57:        isFeatureFlagEnabled("OMNIROUTE_OIDC_DISABLE_PASSWORD_LOGIN") ||
+src/app/api/settings/route.ts:13:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/settings/route.ts:275:        radarEnabled: isFeatureFlagEnabled("RADAR_ENABLED"),
+src/app/api/v1/_shared/audioProviderNodes.ts:24:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/v1/_shared/audioProviderNodes.ts:95:      allowRemote = isFeatureFlagEnabled(AUDIO_REMOTE_NODES_FLAG);
+src/app/api/v1/_shared/rerankProviderNodes.ts:19:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/app/api/v1/_shared/rerankProviderNodes.ts:101:    allowRemote = isFeatureFlagEnabled(RERANK_REMOTE_NODES_FLAG);
+src/lib/cli-helper/claudeProfileAutoSync.ts:7:import { isFeatureFlagEnabled } from "../../shared/utils/featureFlags";
+src/lib/cli-helper/claudeProfileAutoSync.ts:27:  return isFeatureFlagEnabled("OMNIROUTE_AUTO_SYNC_CLAUDE_PROFILES");
+src/lib/cli-helper/codexProfileAutoSync.ts:7:import { isFeatureFlagEnabled } from "../../shared/utils/featureFlags";
+src/lib/cli-helper/codexProfileAutoSync.ts:27:  return isFeatureFlagEnabled("OMNIROUTE_AUTO_SYNC_CODEX_PROFILES");
+src/lib/db/callLogStats.ts:8:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/db/callLogStats.ts:230:    return isFeatureFlagEnabled("SEARCH_STATS_HIDE_DELETED_CONNECTIONS");
+src/lib/db/cleanup.ts:29:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/db/cleanup.ts:515:  if (!isFeatureFlagEnabled("BATCH_AND_FILE_AUTO_CLEANUP_ENABLED")) {
+src/lib/db/cleanup.ts:554:  if (!isFeatureFlagEnabled("BATCH_AND_FILE_AUTO_CLEANUP_ENABLED")) {
+src/lib/guardrails/piiMasker.ts:5:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/guardrails/piiMasker.ts:17:  return isFeatureFlagEnabled("PII_REDACTION_ENABLED");
+src/lib/piiSanitizer.ts:16:import { isFeatureFlagEnabled, resolveFeatureFlag } from "@/shared/utils/featureFlags";
+src/lib/piiSanitizer.ts:18:const isEnabled = () => isFeatureFlagEnabled("PII_RESPONSE_SANITIZATION");
+src/lib/radar/index.ts:23:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/index.ts:111:    getFlag = isFeatureFlagEnabled,
+src/lib/radar/index.ts:223:  const { getFlag = isFeatureFlagEnabled, getCache: getCacheFn = getRadarReferralsCache } = deps;
+src/lib/radar/index.ts:283:    getFlag = isFeatureFlagEnabled,
+src/lib/radar/index.ts:323:  const { getFlag = isFeatureFlagEnabled, getCache: getCacheFn = getRadarIntelCache } = deps;
+src/lib/radar/intelSync.ts:7:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/intelSync.ts:91:    getFlag = isFeatureFlagEnabled,
+src/lib/radar/offersSync.ts:7:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/offersSync.ts:79:    getFlag = isFeatureFlagEnabled,
+src/lib/radar/referralsSync.ts:25:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/referralsSync.ts:158:    getFlag = isFeatureFlagEnabled,
+src/lib/radar/scheduler.ts:26:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/scheduler.ts:115:  const getFlag = deps.getFlag ?? isFeatureFlagEnabled;
+src/lib/radar/scheduler.ts:179:    const getFlag = deps.getFlag ?? isFeatureFlagEnabled;
+src/lib/radar/sync.ts:17:import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
+src/lib/radar/sync.ts:172:    getFlag = isFeatureFlagEnabled,
+src/shared/constants/featureFlagDefinitions.ts:459:    key: "UNIVERSAL_CONTEXT_HANDOFF_ENABLED",
+src/shared/utils/featureFlags.ts:26:export function isFeatureFlagEnabled(key: string): boolean {
+src/shared/utils/featureFlags.ts:61:    return isFeatureFlagEnabled("REQUIRE_API_KEY");
+src/shared/utils/featureFlags.ts:72:  return isFeatureFlagEnabled("ENABLE_CC_COMPATIBLE_PROVIDER");
+
+========== 2. HANDOFF CALL SITES ==========
+src/lib/db/contextHandoffs.ts:183:export function recordSessionModelUsage(
+src/lib/db/contextHandoffs.ts:206:export function getLastSessionModel(sessionId: string, comboName: string): string | null {
+src/sse/handlers/chat.ts:48:import { injectHandoffIntoBody } from "@omniroute/open-sse/services/contextHandoff.ts";
+src/sse/handlers/chat.ts:1924:          requestBody = injectHandoffIntoBody(requestBody, handoff, undefined, sourceFormat);
+open-sse/services/combo/comboSetup.ts:18:import { getLastSessionModel } from "../../../src/lib/db/contextHandoffs.ts";
+open-sse/services/combo/comboSetup.ts:67:    const pinned = getLastSessionModel(effectiveSessionId, combo.name);
+open-sse/services/combo/executeTargetAttempt.ts:35:  maybeGenerateUniversalHandoff,
+open-sse/services/combo/executeTargetAttempt.ts:42:  recordSessionModelUsage,
+open-sse/services/combo/executeTargetAttempt.ts:43:  getLastSessionModel,
+open-sse/services/combo/executeTargetAttempt.ts:307:      const lastModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts:561:        recordSessionModelUsage(
+open-sse/services/combo/executeTargetAttempt.ts:576:        const prevModel = getLastSessionModel(deps.relayOptions.sessionId, deps.combo.name);
+open-sse/services/combo/executeTargetAttempt.ts:577:        recordSessionModelUsage(
+open-sse/services/combo/executeTargetAttempt.ts:586:        // comment above. recordSessionModelUsage above stays
+open-sse/services/combo/executeTargetAttempt.ts:599:          maybeGenerateUniversalHandoff({
+open-sse/services/combo/executeTargetAttempt.ts:610:        recordSessionModelUsage(
+open-sse/services/combo/failureTracker.ts:17: *    recordSessionModelUsage / deleteSessionModelHistory. Losing the
+open-sse/services/contextHandoff.ts:563:export function injectHandoffIntoBody(
+open-sse/services/contextHandoff.ts:610:export function buildUniversalHandoffSystemMessage(
+open-sse/services/contextHandoff.ts:657:export function shouldGenerateUniversalHandoff(options: {
+open-sse/services/contextHandoff.ts:680:// `shouldGenerateUniversalHandoff` keeps answering "generate" and the very next
+open-sse/services/contextHandoff.ts:744:// the bare no-summary note (buildUniversalHandoffSystemMessage's `!payload`
+open-sse/services/contextHandoff.ts:854:export function maybeGenerateUniversalHandoff(options: {
+open-sse/services/contextHandoff.ts:863:  const decision = shouldGenerateUniversalHandoff({
+open-sse/services/contextHandoff.ts:922:  const handoffContent = buildUniversalHandoffSystemMessage(
+
+========== 3. EXISTING HANDOFF TEST COVERAGE ==========
+tests/integration/combo-matrix/context-relay-handoff.test.ts:1:// tests/integration/combo-matrix/context-relay-handoff.test.ts
+tests/integration/combo-matrix/context-relay-handoff.test.ts:4://   the session-context transfer that fires when a model switch is detected,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:5://   regardless of provider (provider-agnostic). This is the distinguishing
+tests/integration/combo-matrix/context-relay-handoff.test.ts:10://   1. Universal handoff fires (extra summary dispatch + DB record) when:
+tests/integration/combo-matrix/context-relay-handoff.test.ts:11://      - universalHandoffConfig.enabled = true (default)
+tests/integration/combo-matrix/context-relay-handoff.test.ts:14://   2. Control (no model switch): prevModel === currModel — handoff must NOT fire.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:15://   3. Control (no session ID): no header passed — handoff must NOT fire.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:18://   Requires strategy === "context-relay" AND provider === "codex" AND a live
+tests/integration/combo-matrix/context-relay-handoff.test.ts:22://   codex path. This block requires a real codex provider connection (VPS) and
+tests/integration/combo-matrix/context-relay-handoff.test.ts:23://   is NOT covered here. The universal-handoff path above is the user-visible,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:24://   provider-agnostic behavior and is now fully covered.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:28:import { createComboRoutingHarness, providerFromUrl } from "../_comboRoutingHarness.ts";
+tests/integration/combo-matrix/context-relay-handoff.test.ts:31:// A late background handoff must never escape to a real provider with fixture credentials.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:33:  throw new Error("Unexpected network request outside the scripted handoff fixture");
+tests/integration/combo-matrix/context-relay-handoff.test.ts:35:const h = await createComboRoutingHarness("combo-relay-handoff");
+tests/integration/combo-matrix/context-relay-handoff.test.ts:53:// A minimal but valid handoff-JSON blob that parseHandoffJSON will accept.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:56:  summary: "User initiated a context-relay handoff test and requested a model switch.",
+tests/integration/combo-matrix/context-relay-handoff.test.ts:62:const COMBO_NAME = "m-relay-handoff";
+tests/integration/combo-matrix/context-relay-handoff.test.ts:67:const SESSION_HEADER_VALUE = "relay-handoff-session-001";
+tests/integration/combo-matrix/context-relay-handoff.test.ts:70:const CURR_MODEL = "openai/gpt-4o-mini"; // the combo target model (provider/model format)
+tests/integration/combo-matrix/context-relay-handoff.test.ts:90://   • returns a valid handoff JSON (wrapped in an OpenAI completion) for the
+tests/integration/combo-matrix/context-relay-handoff.test.ts:98:    const provider = providerFromUrl(u);
+tests/integration/combo-matrix/context-relay-handoff.test.ts:114:      provider,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:156:// ── Test 1: universal handoff fires on model switch ────────────────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts:166://               dispatch). The assertion FAILS if the handoff did not fire.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:167:test("context-relay universal handoff: fires and writes handoff record on model switch", async () => {
+tests/integration/combo-matrix/context-relay-handoff.test.ts:168:  await seedConnection("openai", { apiKey: "sk-openai-handoff" });
+tests/integration/combo-matrix/context-relay-handoff.test.ts:169:  await seedConnection("gemini", { apiKey: "sk-gemini-handoff" });
+tests/integration/combo-matrix/context-relay-handoff.test.ts:177:      { id: "rh-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" },
+tests/integration/combo-matrix/context-relay-handoff.test.ts:182:  // universalHandoffConfig.enabled = true by DEFAULT_UNIVERSAL_HANDOFF_CONFIG.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:193:  const handoff = await waitFor(() => getHandoff(SESSION_ID, COMBO_NAME), 2000);
+tests/integration/combo-matrix/context-relay-handoff.test.ts:196:    handoff !== null,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:197:    "universal handoff record must be written to DB when a model switch is detected"
+tests/integration/combo-matrix/context-relay-handoff.test.ts:200:    typeof handoff!.summary === "string" && handoff!.summary.length > 0,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:201:    `handoff.summary must be non-empty; got: ${JSON.stringify(handoff!.summary)}`
+tests/integration/combo-matrix/context-relay-handoff.test.ts:203:  assert.equal(handoff!.comboName, COMBO_NAME, "handoff must be keyed to the correct combo");
+tests/integration/combo-matrix/context-relay-handoff.test.ts:204:  assert.equal(handoff!.sessionId, SESSION_ID, "handoff must be keyed to the correct session");
+tests/integration/combo-matrix/context-relay-handoff.test.ts:209:    `expected ≥2 upstream dispatches (main + summary); got ${h.calls.length}: ${JSON.stringify(h.calls.map((c) => ({ i: c.index, p: c.provider, m: c.model })))}`
+tests/integration/combo-matrix/context-relay-handoff.test.ts:213:// ── Test 2: control — no model switch, handoff must NOT fire ──────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts:217:// no handoff. The assertion FAILS if the code incorrectly fires a handoff.
+tests/integration/combo-matrix/context-relay-handoff.test.ts:218:test("context-relay universal handoff: does NOT fire when no prior model is recorded (no switch)", async () => {
+tests/integration/combo-matrix/context-relay-handoff.test.ts:225:    models: [{ id: "ns-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+tests/integration/combo-matrix/context-relay-handoff.test.ts:238:  const handoff = getHandoff(SESSION_ID, COMBO_NAME);
+tests/integration/combo-matrix/context-relay-handoff.test.ts:240:    handoff,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:242:    "handoff must NOT be written when no prior model exists (prevModel is null)"
+tests/integration/combo-matrix/context-relay-handoff.test.ts:253:// ── Test 3: control — no session ID, handoff must NOT fire ────────────────────
+tests/integration/combo-matrix/context-relay-handoff.test.ts:257:test("context-relay universal handoff: does NOT fire when x-omniroute-session-id header is absent", async () => {
+tests/integration/combo-matrix/context-relay-handoff.test.ts:264:    models: [{ id: "sid-openai", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+tests/integration/combo-matrix/context-relay-handoff.test.ts:279:  const handoff = getHandoff(SESSION_ID, COMBO_NAME);
+tests/integration/combo-matrix/context-relay-handoff.test.ts:281:    handoff,
+tests/integration/combo-matrix/context-relay-handoff.test.ts:283:    "handoff must NOT be written when x-omniroute-session-id header is absent (sessionId gate)"
+tests/integration/combo-matrix/context-relay-codex.test.ts:4:// (combo.ts ~2143-2183): the quota-aware handoff that fires after a successful
+tests/integration/combo-matrix/context-relay-codex.test.ts:9://       relayConfig.handoffProviders.includes(provider) && provider === "codex") {
+tests/integration/combo-matrix/context-relay-codex.test.ts:10://     const connectionId = getSessionConnection(relayOptions.sessionId);
+tests/integration/combo-matrix/context-relay-codex.test.ts:11://     if (connectionId) {
+tests/integration/combo-matrix/context-relay-codex.test.ts:12://       const quotaInfo = await fetchCodexQuota(connectionId).catch(() => null);
+tests/integration/combo-matrix/context-relay-codex.test.ts:19://   the universal handoff path does NOT set expiresAt from a codex quota fetch.
+tests/integration/combo-matrix/context-relay-codex.test.ts:23://   - The handoff record has a non-empty .summary.
+tests/integration/combo-matrix/context-relay-codex.test.ts:80:  summary: "User is implementing a TypeScript context-relay codex quota-handoff test using TDD.",
+tests/integration/combo-matrix/context-relay-codex.test.ts:81:  keyDecisions: ["codex provider selected", "quota threshold at 90%"],
+tests/integration/combo-matrix/context-relay-codex.test.ts:82:  taskProgress: "writing deterministic integration test for codex handoff",
+tests/integration/combo-matrix/context-relay-codex.test.ts:132:// primary_window  → session  → percentUsed = 0.90 (90%) — triggers handoff (threshold 0.85)
+tests/integration/combo-matrix/context-relay-codex.test.ts:167:// The second codex-responses call is the handoff summary generation, identified by
+tests/integration/combo-matrix/context-relay-codex.test.ts:201:      // Subsequent call(s) are from the handoff summary generation.
+tests/integration/combo-matrix/context-relay-codex.test.ts:233:// ── Test 1 (PRIMARY): codex quota handoff fires ───────────────────────────────
+tests/integration/combo-matrix/context-relay-codex.test.ts:248:// Assertion: handoff.expiresAt === sessionResetISO (codex-specific, not TTL-derived).
+tests/integration/combo-matrix/context-relay-codex.test.ts:250:test("context-relay codex quota handoff: fires and expiresAt matches session-window reset from quota", async () => {
+tests/integration/combo-matrix/context-relay-codex.test.ts:252:  const conn = await seedConnection("codex", { apiKey: "sk-codex-handoff-test-1" });
+tests/integration/combo-matrix/context-relay-codex.test.ts:259:  registerCodexConnection(codexConnId, { accessToken: "sk-codex-handoff-test-1" });
+tests/integration/combo-matrix/context-relay-codex.test.ts:262:  //    Default handoffProviders: ["codex"] and handoffThreshold: 0.85 apply.
+tests/integration/combo-matrix/context-relay-codex.test.ts:267:    models: [{ id: "rc-codex-1", kind: "model", providerId: "codex", model: "gpt-5.3-codex" }],
+tests/integration/combo-matrix/context-relay-codex.test.ts:286:  const handoff = await waitFor(() => getHandoff(SESSION_ID, CODEX_COMBO_NAME), 3000);
+tests/integration/combo-matrix/context-relay-codex.test.ts:288:  // ── Primary assertion: handoff record exists ──────────────────────────────
+tests/integration/combo-matrix/context-relay-codex.test.ts:290:    handoff !== null,
+tests/integration/combo-matrix/context-relay-codex.test.ts:291:    "codex quota handoff record must be written to DB when quota ≥ threshold"
+tests/integration/combo-matrix/context-relay-codex.test.ts:295:  // The universal handoff path never calls fetchCodexQuota, so it cannot produce
+tests/integration/combo-matrix/context-relay-codex.test.ts:298:    handoff!.expiresAt,
+tests/integration/combo-matrix/context-relay-codex.test.ts:300:    `handoff.expiresAt must equal the session-window reset from codex quota (${expectedExpiresAt}); ` +
+tests/integration/combo-matrix/context-relay-codex.test.ts:301:      `got ${handoff!.expiresAt}`
+tests/integration/combo-matrix/context-relay-codex.test.ts:312:    typeof handoff!.summary === "string" && handoff!.summary.length > 0,
+tests/integration/combo-matrix/context-relay-codex.test.ts:313:    `handoff.summary must be non-empty; got ${JSON.stringify(handoff!.summary)}`
+tests/integration/combo-matrix/context-relay-codex.test.ts:320:// ── Test 2 (CONTROL): non-codex provider never triggers the codex block ───────
+tests/integration/combo-matrix/context-relay-codex.test.ts:322:// The codex block gates on `provider === "codex"`. A combo targeting openai
+tests/integration/combo-matrix/context-relay-codex.test.ts:327:// actually gated on `provider === "codex"`).
+tests/integration/combo-matrix/context-relay-codex.test.ts:329:test("context-relay codex quota handoff: does NOT fire when provider is openai (control)", async () => {
+tests/integration/combo-matrix/context-relay-codex.test.ts:337:    models: [{ id: "rc-openai-ctrl", kind: "model", providerId: "openai", model: "gpt-4o-mini" }],
+tests/integration/combo-matrix/context-relay-codex.test.ts:352:  // The codex block requires provider === "codex", so it never runs for openai.
+tests/integration/combo-matrix/context-relay-codex.test.ts:356:    `codex usage URL must NOT be fetched for openai provider; seen: ${JSON.stringify(seenUrls)}`
+tests/integration/combo-matrix/context-relay-codex.test.ts:359:  // No codex quota handoff record in DB.
+tests/integration/combo-matrix/context-relay-codex.test.ts:360:  // (The universal handoff also does not fire because no prior model is seeded,
+tests/integration/combo-matrix/context-relay-codex.test.ts:361:  // so getLastSessionModel returns null → no model switch detected.)
+tests/integration/combo-matrix/context-relay-codex.test.ts:362:  const handoff = getHandoff(SESSION_ID, CONTROL_COMBO_NAME);
+tests/integration/combo-matrix/context-relay-codex.test.ts:364:    handoff,
+tests/integration/combo-matrix/context-relay-codex.test.ts:366:    "no handoff record must exist when provider is openai (codex block never entered)"
+tests/unit/chat-context-relay.test.ts:9:const providersDb = await import("../../src/lib/db/providers.ts");
+tests/unit/chat-context-relay.test.ts:10:const handoffDb = await import("../../src/lib/db/contextHandoffs.ts");
+tests/unit/chat-context-relay.test.ts:45:  return providersDb.createProviderConnection({
+tests/unit/chat-context-relay.test.ts:46:    provider: "codex",
+tests/unit/chat-context-relay.test.ts:55:    providerSpecificData: { workspaceId },
+tests/unit/chat-context-relay.test.ts:88:test("handleChat generates and injects context-relay handoffs across Codex account switches", async () => {
+
+========== READ-ONLY REVIEW COMPLETE ==========
+[opc@litellm-gateway OmniRoute-source]$
